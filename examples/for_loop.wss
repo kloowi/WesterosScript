@@ -1,0 +1,8 @@
+coin sum claims 0!
+
+for_each_house coin i claims 0 until_spring 5 then
+    raven i!
+    sum claims sum unite i!
+end!
+
+raven sum!

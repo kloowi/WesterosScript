@@ -66,6 +66,9 @@ class Parser:
         if self._match(TokenType.WHILE_WINTER):
             return self._while_stmt()
 
+        if self._match(TokenType.FOR_EACH_HOUSE):
+            return self._for_each_house_stmt()
+
         if self._match(TokenType.BREAK_CHAIN):
             self._consume_bang_with_recovery()
             return ast.BreakChain()
@@ -73,6 +76,14 @@ class Parser:
         if self._match(TokenType.CONTINUE_MARCH):
             self._consume_bang_with_recovery()
             return ast.ContinueMarch()
+
+        # Assignment: <identifier> claims <expr>!
+        if self._check(TokenType.IDENTIFIER) and self._peek_next().type == TokenType.CLAIMS:
+            name = self._advance().lexeme
+            self._consume(TokenType.CLAIMS, "Expected 'claims' assignment operator.")
+            value = self._expression()
+            self._consume_bang_with_recovery()
+            return ast.Assign(name=name, value=value)
 
         if self._peek().type == TokenType.EOF:
             return None
@@ -172,6 +183,23 @@ class Parser:
         self._consume_bang_with_recovery()
         return ast.WhileWinter(condition=cond, body=body)
 
+    def _for_each_house_stmt(self) -> ast.ForEachHouse:
+        # for_each_house (coin|dragon_gold)? <name> claims <start> until_spring <end> then <block> end!
+        type_name = ast.TypeName.COIN
+        if self._match(TokenType.COIN, TokenType.DRAGON_GOLD):
+            type_name = _type_from_token(self._previous().type)
+
+        name = self._consume(TokenType.IDENTIFIER, "Expected an identifier after for_each_house.").lexeme
+        self._consume(TokenType.CLAIMS, "Expected 'claims' after loop variable name.")
+        start = self._expression()
+        self._consume(TokenType.UNTIL_SPRING, "Expected 'until_spring' after loop start expression.")
+        end = self._expression()
+        self._consume(TokenType.THEN, "Expected 'then' after for_each_house range.")
+        body = self._block_until({TokenType.END})
+        self._consume(TokenType.END, "Expected 'end' to close for_each_house block.")
+        self._consume_bang_with_recovery()
+        return ast.ForEachHouse(type_name=type_name, name=name, start=start, end=end, body=body)
+
     def _block_until(self, end_tokens: set[TokenType]) -> ast.Block:
         statements: list[ast.Stmt] = []
         while not self._is_at_end() and self._peek().type not in end_tokens:
@@ -211,6 +239,11 @@ class Parser:
 
     def _peek(self) -> Token:
         return self.tokens[self.current]
+
+    def _peek_next(self) -> Token:
+        if self.current + 1 >= len(self.tokens):
+            return self.tokens[-1]
+        return self.tokens[self.current + 1]
 
     def _previous(self) -> Token:
         return self.tokens[self.current - 1]

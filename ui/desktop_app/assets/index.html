@@ -75,7 +75,12 @@
         background-color: #0c0b05;
       }
       textarea {
+        appearance: none;
         background: transparent;
+        border: 0;
+        box-shadow: none;
+        margin: 0;
+        padding: 0;
         resize: none;
         outline: none;
         width: 100%;
@@ -85,6 +90,12 @@
         text-shadow: 0 0 0 rgba(0, 0, 0, 0);
         caret-color: #ffd900;
         line-height: 1.65;
+      }
+      textarea:focus,
+      textarea:focus-visible {
+        outline: none !important;
+        border: 0 !important;
+        box-shadow: none !important;
       }
       textarea::selection {
         color: transparent;
@@ -98,6 +109,7 @@
         user-select: none;
         text-align: right;
         padding-right: 1.25rem;
+        line-height: 1.65;
         color: rgba(255, 217, 0, 0.28);
       }
       .focus-ring:focus-within {
@@ -213,14 +225,14 @@
 
       <div class="flex-1 flex flex-col overflow-hidden">
         <div class="flex-1 overflow-auto custom-scrollbar p-6">
-          <div class="focus-ring rounded-lg border border-primary/20 bg-black/30">
+          <div class="focus-ring h-80 overflow-hidden rounded-lg border border-primary/20 bg-black/30">
             <div class="flex font-mono text-sm">
-              <div id="lineNums" class="line-nums py-4 pl-4 pr-5"></div>
-              <div class="relative flex-1 py-4 pr-4">
-                <pre id="overlay" class="editor-overlay text-slate-200 absolute inset-0"></pre>
+              <div id="lineNums" class="line-nums pt-[1.3rem] pb-4 pl-4 pr-5"></div>
+              <div class="relative flex-1 pr-4">
+                <pre id="overlay" class="editor-overlay text-slate-200 absolute left-0 right-0 top-[1.3rem] bottom-4"></pre>
                 <textarea
                   id="editor"
-                  class="absolute inset-0 px-0 py-0 font-mono text-sm"
+                  class="absolute left-0 right-0 top-[1.3rem] bottom-4 px-0 py-0 font-mono text-sm"
                   spellcheck="false"
                 >coin gold claims 100!
 scroll name claims "Arya"!
@@ -520,13 +532,12 @@ raven gold!
       window.addEventListener("load", () => {
         // Ensure overlay is aligned with the textarea.
         editor.style.padding = "0";
+        overlay.style.padding = "0";
         overlay.parentElement.style.position = "relative";
         overlay.parentElement.style.minHeight = "100%";
         editor.style.background = "transparent";
         editor.style.color = "transparent";
         editor.style.caretColor = "#ffd900";
-        editor.style.width = "100%";
-        editor.style.height = "100%";
         syncOverlay();
         setTab("analysis");
       });

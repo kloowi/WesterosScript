@@ -18,6 +18,8 @@ class SemanticAnalyzer:
             if self.diags.has_fatal:
                 return
             self._stmt(stmt)
+        if not self.diags.has_fatal:
+            self.explainer.say("CITADEL", "✓ The Citadel approves the structure.")
 
     def _stmt(self, stmt: ast.Stmt) -> None:
         if isinstance(stmt, ast.VarDecl):
@@ -35,6 +37,28 @@ class SemanticAnalyzer:
             self.explainer.say("CITADEL", "Types are compatible.")
             self.explainer.say("CITADEL", f"Recording {stmt.name!r} into the Great Ledger.")
             self.ledger.define(stmt.name, stmt.type_name, stored_value)
+            return
+
+        if isinstance(stmt, ast.Assign):
+            sym = self.ledger.get(stmt.name)
+            if sym is None:
+                self.diags.fatal(f"Unknown identifier {stmt.name!r}.")
+                return
+
+            value, value_type = self._eval(stmt.value)
+            if self.diags.has_fatal:
+                return
+
+            if not _is_compatible(sym.type_name, value_type, value):
+                self.diags.fatal(
+                    f"Variable {stmt.name!r} is of type {sym.type_name.value!r},\n"
+                    f"yet the value {value!r} is a {value_type.value}.\n\n"
+                    "The Citadel refuses this decree."
+                )
+                return
+
+            stored_value = _coerce(sym.type_name, value)
+            self.ledger.define(stmt.name, sym.type_name, stored_value)
             return
 
         if isinstance(stmt, ast.Raven):
@@ -65,6 +89,29 @@ class SemanticAnalyzer:
             self._ensure_oath(stmt.condition)
             if self.diags.has_fatal:
                 return
+            self._stmt(stmt.body)
+            return
+
+        if isinstance(stmt, ast.ForEachHouse):
+            self.explainer.say("CITADEL", "The realm marches in order: a for_each_house loop is proposed.")
+            start_v, start_t = self._eval(stmt.start)
+            end_v, end_t = self._eval(stmt.end)
+            if self.diags.has_fatal:
+                return
+
+            if start_t not in {ast.TypeName.COIN, ast.TypeName.DRAGON_GOLD} or end_t not in {
+                ast.TypeName.COIN,
+                ast.TypeName.DRAGON_GOLD,
+            }:
+                self.diags.fatal("for_each_house bounds must be numeric wealth (coin or dragon_gold).")
+                return
+
+            # Milestone behavior: loop variable is always recorded as coin (integer marching orders).
+            start_i = int(start_v)
+            self.explainer.say("CITADEL", f"Recording loop variable {stmt.name!r} into the Great Ledger as 'coin'.")
+            self.ledger.define(stmt.name, ast.TypeName.COIN, start_i)
+
+            # Typecheck the body in the current (global) ledger context.
             self._stmt(stmt.body)
             return
 

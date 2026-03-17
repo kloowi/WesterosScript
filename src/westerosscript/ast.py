@@ -34,6 +34,12 @@ class VarDecl(Stmt):
 
 
 @dataclass(frozen=True)
+class Assign(Stmt):
+    name: str
+    value: Expr
+
+
+@dataclass(frozen=True)
 class Raven(Stmt):
     value: Expr
 
@@ -56,6 +62,24 @@ class Council(Stmt):
 @dataclass(frozen=True)
 class WhileWinter(Stmt):
     condition: Expr
+    body: Block
+
+
+@dataclass(frozen=True)
+class ForEachHouse(Stmt):
+    """
+    `for_each_house (coin|dragon_gold)? <name> claims <start> until_spring <end> then <block> end!`
+
+    Semantics (initial milestone):
+    - Initializes `<name>` to `<start>` (coerced to coin/int)
+    - Repeats while `<name> < <end>` (end is evaluated once at loop entry)
+    - Auto-increments `<name>` by 1 after each iteration
+    """
+
+    type_name: TypeName
+    name: str
+    start: Expr
+    end: Expr
     body: Block
 
 

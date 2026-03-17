@@ -93,11 +93,9 @@ class Lexer:
             TokenType.OATH,
             TokenType.LEDGER,
         }:
-            self.explainer.say("MAESTER", f"I have discovered the word {text!r}.")
-            self.explainer.say("MAESTER", "This represents a DATATYPE in the realm.")
+            self.explainer.say("MAESTER", f"I have discovered the word {text!r}. This represents a DATATYPE in the realm.")
         elif token_type == TokenType.CLAIMS:
-            self.explainer.say("MAESTER", "The decree uses the word 'claims'.")
-            self.explainer.say("MAESTER", "This is the sacred assignment operator.")
+            self.explainer.say("MAESTER", "I have discovered the word 'claims'. This is the sacred assignment operator.")
         elif token_type == TokenType.IDENTIFIER:
             self.explainer.say("MAESTER", f"The name {text!r} appears to be a treasury identifier.")
 
