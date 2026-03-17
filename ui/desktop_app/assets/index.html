@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Citadel Compiler Widget</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Serif:ital,wght@0,400;0,700;1,400&family=JetBrains+Mono:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              primary: "#ffd900",
+              "background-light": "#f8f8f5",
+              "background-dark": "#23200f",
+            },
+            fontFamily: {
+              display: ["Noto Serif"],
+              mono: ["JetBrains Mono", "monospace"],
+            },
+            borderRadius: {
+              DEFAULT: "0.5rem",
+              lg: "1rem",
+              xl: "1.5rem",
+              full: "9999px",
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      .glass-effect {
+        background: linear-gradient(
+          180deg,
+          rgba(18, 16, 8, 0.78) 0%,
+          rgba(10, 9, 4, 0.72) 100%
+        );
+        backdrop-filter: blur(18px) saturate(140%);
+        -webkit-backdrop-filter: blur(18px) saturate(140%);
+        border: 1px solid rgba(255, 217, 0, 0.22);
+      }
+      .custom-scrollbar::-webkit-scrollbar {
+        width: 4px;
+      }
+      .custom-scrollbar::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #ffd90033;
+        border-radius: 10px;
+      }
+      body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        margin: 0;
+        background-image:
+          radial-gradient(900px 520px at 25% 15%, rgba(255, 217, 0, 0.10) 0%, rgba(255, 217, 0, 0) 60%),
+          radial-gradient(800px 520px at 80% 85%, rgba(66, 245, 176, 0.07) 0%, rgba(66, 245, 176, 0) 55%),
+          radial-gradient(900px 620px at 65% 20%, rgba(255, 140, 0, 0.06) 0%, rgba(255, 140, 0, 0) 55%),
+          url("APP-background.png");
+        background-size: auto, auto, auto, cover;
+        background-position: center, center, center, center;
+        background-repeat: no-repeat, no-repeat, no-repeat, no-repeat;
+        background-color: #0c0b05;
+      }
+      textarea {
+        background: transparent;
+        resize: none;
+        outline: none;
+        width: 100%;
+        height: 100%;
+        color: transparent;
+        -webkit-text-fill-color: transparent;
+        text-shadow: 0 0 0 rgba(0, 0, 0, 0);
+        caret-color: #ffd900;
+        line-height: 1.65;
+      }
+      textarea::selection {
+        color: transparent;
+      }
+      .editor-overlay {
+        pointer-events: none;
+        white-space: pre;
+        line-height: 1.65;
+      }
+      .line-nums {
+        user-select: none;
+        text-align: right;
+        padding-right: 1.25rem;
+        color: rgba(255, 217, 0, 0.28);
+      }
+      .focus-ring:focus-within {
+        box-shadow: 0 0 0 1px rgba(255, 217, 0, 0.35), 0 0 22px rgba(255, 217, 0, 0.12);
+      }
+      .btn {
+        transition: transform 120ms ease, background-color 120ms ease, border-color 120ms ease;
+      }
+      .btn:active {
+        transform: translateY(1px);
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+
+      /* Terminal output styling (minimal, readable) */
+      .terminal {
+        font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New",
+          monospace;
+        font-size: 12px;
+        line-height: 1.6;
+        letter-spacing: 0.01em;
+        color: rgba(226, 232, 240, 0.92);
+      }
+      .terminal .t-section {
+        margin: 0.75rem 0 0.35rem;
+        padding-top: 0.65rem;
+        border-top: 1px solid rgba(255, 217, 0, 0.12);
+        color: rgba(255, 217, 0, 0.72);
+        font-weight: 700;
+        font-size: 11px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+      }
+      .terminal .t-line {
+        display: flex;
+        gap: 0.5rem;
+        align-items: flex-start;
+        padding: 0.1rem 0;
+      }
+      .terminal .t-tag {
+        flex: 0 0 auto;
+        font-size: 10px;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        padding: 0.15rem 0.4rem;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        background: rgba(255, 255, 255, 0.04);
+        color: rgba(226, 232, 240, 0.75);
+        margin-top: 0.05rem;
+      }
+      .terminal .t-tag.maester {
+        border-color: rgba(255, 217, 0, 0.25);
+        background: rgba(255, 217, 0, 0.07);
+        color: rgba(255, 217, 0, 0.9);
+      }
+      .terminal .t-tag.citadel {
+        border-color: rgba(148, 163, 184, 0.22);
+        background: rgba(148, 163, 184, 0.08);
+        color: rgba(226, 232, 240, 0.92);
+      }
+      .terminal .t-tag.warn {
+        border-color: rgba(245, 158, 11, 0.25);
+        background: rgba(245, 158, 11, 0.07);
+        color: rgba(245, 158, 11, 0.95);
+      }
+      .terminal .t-tag.fatal {
+        border-color: rgba(244, 63, 94, 0.28);
+        background: rgba(244, 63, 94, 0.08);
+        color: rgba(251, 113, 133, 0.98);
+      }
+      .terminal .t-tag.out {
+        border-color: rgba(52, 211, 153, 0.25);
+        background: rgba(52, 211, 153, 0.08);
+        color: rgba(110, 231, 183, 0.98);
+      }
+      .terminal .t-body {
+        white-space: pre-wrap;
+        word-break: break-word;
+        color: rgba(226, 232, 240, 0.92);
+      }
+      .terminal .t-dim {
+        color: rgba(148, 163, 184, 0.75);
+      }
+    </style>
+  </head>
+  <body class="font-display text-slate-100 antialiased selection:bg-primary/30 p-4">
+    <div
+      class="w-full max-w-2xl aspect-square flex flex-col rounded-2xl glass-effect shadow-[0_0_40px_rgba(255,217,0,0.18),inset_0_0_26px_rgba(255,217,0,0.06)] overflow-hidden"
+    >
+      <div class="flex items-center justify-between px-5 py-3 bg-primary/5 border-b border-primary/20">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-primary text-sm">auto_fix_high</span>
+          <span class="text-[10px] font-bold tracking-[0.2em] text-primary/70 uppercase">Westeros Compiler</span>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <div class="flex items-center gap-2 px-3 py-1 bg-background-dark/80 rounded border border-primary/20">
+            <span class="material-symbols-outlined text-primary text-[14px]">scrollable_header</span>
+            <span id="filename" class="text-[10px] font-bold text-primary/90">untitled.wss</span>
+          </div>
+          <button
+            id="analyzeBtn"
+            class="btn px-3 py-1 rounded border border-primary/30 bg-primary/10 hover:bg-primary/20 text-[10px] font-bold tracking-[0.2em] uppercase text-primary"
+            type="button"
+          >
+            Run
+          </button>
+        </div>
+      </div>
+
+      <div class="flex-1 flex flex-col overflow-hidden">
+        <div class="flex-1 overflow-auto custom-scrollbar p-6">
+          <div class="focus-ring rounded-lg border border-primary/20 bg-black/30">
+            <div class="flex font-mono text-sm">
+              <div id="lineNums" class="line-nums py-4 pl-4 pr-5"></div>
+              <div class="relative flex-1 py-4 pr-4">
+                <pre id="overlay" class="editor-overlay text-slate-200 absolute inset-0"></pre>
+                <textarea
+                  id="editor"
+                  class="absolute inset-0 px-0 py-0 font-mono text-sm"
+                  spellcheck="false"
+                >coin gold claims 100!
+scroll name claims "Arya"!
+raven gold!
+</textarea>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="h-1/3 border-t border-primary/20 bg-black/40 flex flex-col">
+          <div class="flex border-b border-primary/10 px-4">
+            <button id="tabAnalysis" class="px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-primary border-b-2 border-primary">
+              MAESTER'S ANALYSIS
+            </button>
+            <button id="tabLedger" class="px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 hover:text-slate-200 transition-colors">
+              Great Ledger
+            </button>
+            <button id="tabOutput" class="px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 hover:text-slate-200 transition-colors">
+              Output
+            </button>
+          </div>
+          <div class="flex-1 p-4 overflow-y-auto font-mono text-xs custom-scrollbar">
+            <div id="output" class="terminal">(ready)</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const analyzeBtn = document.getElementById("analyzeBtn");
+      const editor = document.getElementById("editor");
+      const output = document.getElementById("output");
+      const overlay = document.getElementById("overlay");
+      const lineNums = document.getElementById("lineNums");
+      const tabAnalysis = document.getElementById("tabAnalysis");
+      const tabOutput = document.getElementById("tabOutput");
+      const tabLedger = document.getElementById("tabLedger");
+
+      let lastResult = { output: "(ready)", diagnostics: "", ledger: "", runtime: "" };
+      let activeTab = "analysis";
+
+      function escapeHtml(s) {
+        return s
+          .replaceAll("&", "&amp;")
+          .replaceAll("<", "&lt;")
+          .replaceAll(">", "&gt;")
+          .replaceAll('"', "&quot;")
+          .replaceAll("'", "&#39;");
+      }
+
+      function highlight(src) {
+        // Minimal highlighter: scan once and build safe HTML.
+        // This avoids regex passes over already-generated markup (which can corrupt DOM),
+        // and ensures quotes never break `innerHTML`.
+        const keywords = new Set([
+          "sigil",
+          "coin",
+          "dragon_gold",
+          "scroll",
+          "oath",
+          "ledger",
+          "raven",
+          "summon",
+          "council",
+          "another_path",
+          "then",
+          "otherwise",
+          "end",
+          "for_each_house",
+          "while_winter",
+          "until_spring",
+          "break_chain",
+          "continue_march",
+          "forge",
+          "deliver",
+          "claims",
+          "unite",
+          "clash",
+          "divide_realm",
+          "equals",
+          "greater_than",
+          "less_than",
+          "true",
+          "false",
+          "whisper",
+          "chronicle",
+          "great_house",
+          "heir",
+          "bloodline",
+          "inherits",
+        ]);
+
+        const out = [];
+        const n = src.length;
+        let i = 0;
+
+        const isWordChar = (ch) => /[A-Za-z0-9_]/.test(ch);
+        const emit = (text) => out.push(escapeHtml(text));
+        const wrap = (cls, text) => out.push(`<span class="${cls}">${escapeHtml(text)}</span>`);
+
+        while (i < n) {
+          const ch = src[i];
+
+          // String literal (no multiline escapes; allow backslash escapes).
+          if (ch === '"') {
+            let j = i + 1;
+            let escaped = false;
+            while (j < n) {
+              const cj = src[j];
+              if (escaped) {
+                escaped = false;
+              } else if (cj === "\\") {
+                escaped = true;
+              } else if (cj === '"') {
+                j += 1; // include closing quote
+                break;
+              }
+              j += 1;
+            }
+            // If unterminated, highlight from the opening quote to EOF.
+            wrap("text-orange-300", src.slice(i, j));
+            i = j;
+            continue;
+          }
+
+          // Number literal
+          if (/[0-9]/.test(ch)) {
+            let j = i + 1;
+            while (j < n && /[0-9]/.test(src[j])) j += 1;
+            if (j < n && src[j] === "." && j + 1 < n && /[0-9]/.test(src[j + 1])) {
+              j += 2;
+              while (j < n && /[0-9]/.test(src[j])) j += 1;
+            }
+            wrap("text-emerald-400", src.slice(i, j));
+            i = j;
+            continue;
+          }
+
+          // Keyword / identifier
+          if (/[A-Za-z_]/.test(ch)) {
+            let j = i + 1;
+            while (j < n && isWordChar(src[j])) j += 1;
+            const word = src.slice(i, j);
+            if (keywords.has(word)) wrap("text-primary font-bold", word);
+            else emit(word);
+            i = j;
+            continue;
+          }
+
+          // Delimiter rune
+          if (ch === "!") {
+            wrap("text-emerald-400", "!");
+            i += 1;
+            continue;
+          }
+
+          // Everything else (whitespace/punctuation)
+          emit(ch);
+          i += 1;
+        }
+
+        return out.join("");
+      }
+
+      function syncOverlay() {
+        const src = editor.value.replaceAll("\r\n", "\n");
+        // Use the textarea caret as the single typing indicator.
+        overlay.innerHTML = highlight(src);
+
+        const lines = Math.max(1, src.split("\n").length);
+        let nums = "";
+        for (let i = 1; i <= lines; i++) nums += `<div>${i}</div>`;
+        lineNums.innerHTML = nums;
+      }
+
+      function syncScroll() {
+        overlay.parentElement.scrollTop = editor.scrollTop;
+        overlay.parentElement.scrollLeft = editor.scrollLeft;
+        lineNums.parentElement.scrollTop = editor.scrollTop;
+      }
+
+      function formatTerminal(text) {
+        const src = String(text || "").replaceAll("\r\n", "\n");
+        const lines = src.split("\n");
+
+        const html = [];
+        let sawSection = false;
+
+        for (const rawLine of lines) {
+          const line = rawLine ?? "";
+          if (!line.trim()) continue;
+
+          if (line.startsWith("--- ") && line.endsWith(" ---")) {
+            sawSection = true;
+            html.push(`<div class="t-section">${escapeHtml(line.replaceAll("-", "").trim())}</div>`);
+            continue;
+          }
+
+          if (line.startsWith("[MAESTER WARNING]")) {
+            html.push(
+              `<div class="t-line"><span class="t-tag warn">Warning</span><span class="t-body">${escapeHtml(line)}</span></div>`,
+            );
+            continue;
+          }
+          if (line.startsWith("[FATAL BETRAYAL]")) {
+            html.push(
+              `<div class="t-line"><span class="t-tag fatal">Fatal</span><span class="t-body">${escapeHtml(line)}</span></div>`,
+            );
+            continue;
+          }
+
+          if (line.startsWith("[MAESTER]")) {
+            const body = line.slice("[MAESTER]".length).trimStart();
+            html.push(
+              `<div class="t-line"><span class="t-tag maester">Maester</span><span class="t-body">${escapeHtml(body)}</span></div>`,
+            );
+            continue;
+          }
+          if (line.startsWith("[CITADEL]")) {
+            const body = line.slice("[CITADEL]".length).trimStart();
+            html.push(
+              `<div class="t-line"><span class="t-tag citadel">Citadel</span><span class="t-body">${escapeHtml(body)}</span></div>`,
+            );
+            continue;
+          }
+          if (line.startsWith("[COUNCIL]")) {
+            const body = line.slice("[COUNCIL]".length).trimStart();
+            html.push(
+              `<div class="t-line"><span class="t-tag citadel">Council</span><span class="t-body">${escapeHtml(body)}</span></div>`,
+            );
+            continue;
+          }
+
+          if (line.startsWith("[Output]")) {
+            const body = line.slice("[Output]".length).trimStart();
+            html.push(
+              `<div class="t-line"><span class="t-tag out">Output</span><span class="t-body">${escapeHtml(body)}</span></div>`,
+            );
+            continue;
+          }
+
+          const cls = sawSection ? "t-body" : "t-body t-dim";
+          html.push(`<div class="t-line"><span class="${cls}">${escapeHtml(line)}</span></div>`);
+        }
+
+        return html.length ? html.join("") : `<div class="t-line"><span class="t-body t-dim">(empty)</span></div>`;
+      }
+
+      function setTab(tab) {
+        activeTab = tab;
+        const active =
+          "px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-primary border-b-2 border-primary";
+        const inactive =
+          "px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 hover:text-slate-200 transition-colors";
+
+        tabAnalysis.className = tab === "analysis" ? active : inactive;
+        tabOutput.className = tab === "output" ? active : inactive;
+        tabLedger.className = tab === "ledger" ? active : inactive;
+
+        if (tab === "analysis") output.innerHTML = formatTerminal(lastResult.output || "(ready)");
+        else if (tab === "output") output.innerHTML = formatTerminal(lastResult.runtime || "(no output)");
+        else output.innerHTML = formatTerminal(lastResult.ledger || "(empty)");
+      }
+
+      async function analyze() {
+        analyzeBtn.disabled = true;
+        analyzeBtn.textContent = "Running...";
+        output.innerHTML = formatTerminal("Summoning the Maesters...");
+        try {
+          if (!window.pywebview || !window.pywebview.api) {
+            output.innerHTML = formatTerminal("pywebview API not available yet. Please wait...");
+            return;
+          }
+          const res = await window.pywebview.api.analyze(editor.value, "full");
+          lastResult = {
+            output: res.output || "",
+            diagnostics: res.diagnostics || "",
+            ledger: res.ledger || "",
+            runtime: res.runtime || "",
+          };
+          setTab(activeTab);
+        } catch (e) {
+          output.innerHTML = formatTerminal(String(e));
+        } finally {
+          analyzeBtn.disabled = false;
+          analyzeBtn.textContent = "Run";
+        }
+      }
+
+      analyzeBtn.addEventListener("click", analyze);
+      tabAnalysis.addEventListener("click", () => setTab("analysis"));
+      tabOutput.addEventListener("click", () => setTab("output"));
+      tabLedger.addEventListener("click", () => setTab("ledger"));
+      editor.addEventListener("input", syncOverlay);
+      editor.addEventListener("scroll", syncScroll);
+      window.addEventListener("load", () => {
+        // Ensure overlay is aligned with the textarea.
+        editor.style.padding = "0";
+        overlay.parentElement.style.position = "relative";
+        overlay.parentElement.style.minHeight = "100%";
+        editor.style.background = "transparent";
+        editor.style.color = "transparent";
+        editor.style.caretColor = "#ffd900";
+        editor.style.width = "100%";
+        editor.style.height = "100%";
+        syncOverlay();
+        setTab("analysis");
+      });
+    </script>
+  </body>
+</html>
+

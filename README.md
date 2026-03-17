@@ -1,0 +1,60 @@
+# WesterosScript
+
+WesterosScript is a Game of Thrones–themed educational compiler project. It includes:
+
+- A **Lexer** (Maesters read the scroll)
+- A **Parser** (Small Council validates structure)
+- A **Semantic Analyzer + Symbol Table** (the Citadel records the realm)
+
+This repository starts with an **analysis-only** compiler: it validates syntax/semantics, narrates what it’s doing, and prints the Great Ledger. It does not execute programs yet.
+
+## Requirements
+
+- Windows: Python via the launcher `py` (recommended). Example: `py -V`
+- Python version: \(>= 3.11\)
+
+## Install (dev)
+
+```bash
+py -m pip install -e ".[dev]"
+```
+
+## Run
+
+Analyze a file:
+
+```bash
+wss analyze examples/valid.wss
+```
+
+Useful flags (as they land):
+
+- `--narration full|minimal|off`
+- `--print-tokens`
+- `--print-ast`
+- `--print-ledger`
+
+## Run (desktop UI)
+
+```bash
+py -m ui.desktop_app.main
+```
+
+## Run (Stitch-style desktop UI, Python 3.13)
+
+```bash
+py -3.13 -m pip install -e ".[dev]"
+py -3.13 -m pip install pywebview
+py -3.13 ui/desktop_app/webview_main.py
+```
+
+## Examples (from PRD)
+
+- `examples/valid.wss`
+- `examples/syntax_error_missing_bang.wss`
+- `examples/semantic_error_type_mismatch.wss`
+
+## UI reference (Stitch)
+
+The exported Stitch widget assets live under `ui/stitch/` for reference.
+
