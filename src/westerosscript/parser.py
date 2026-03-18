@@ -103,10 +103,10 @@ class Parser:
     def _consume_bang_with_recovery(self) -> None:
         if self._match(TokenType.BANG):
             return
-        # PRD: recovery strategy inserts missing rune '!'
+        # If the closing rune is missing, report a fatal syntax error instead of inserting one.
         t = self._peek()
-        self.diags.warn("The decree lacks the sacred ending rune '!'.\n\nRecovery Strategy: The Citadel inserts the missing rune.")
-        # Don't advance; treat as inserted delimiter.
+        self.diags.fatal("Expected the sacred ending rune '!' to terminate the statement.", line=t.line, col=t.col)
+        raise ParsePanic()
 
     def _expression(self) -> ast.Expr:
         return self._comparison()
