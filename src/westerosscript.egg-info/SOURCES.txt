@@ -6,6 +6,7 @@ src/westerosscript/cli.py
 src/westerosscript/compiler.py
 src/westerosscript/errors.py
 src/westerosscript/explain.py
+src/westerosscript/interpreter.py
 src/westerosscript/lexer.py
 src/westerosscript/parser.py
 src/westerosscript/semantic.py

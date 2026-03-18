@@ -50,6 +50,14 @@ Useful flags (as they land):
 py -m ui.desktop_app.main
 ```
 
+## Run (Stitch-style desktop UI, Python 3.13)
+
+```bash
+py -3.13 -m pip install -e ".[dev]"
+py -3.13 -m pip install pywebview
+py -3.13 ui/desktop_app/webview_main.py
+```
+
 ## Examples (from PRD)
 
 - `examples/valid.wss`
