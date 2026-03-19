@@ -7,10 +7,11 @@ from westerosscript.tokens import Token, TokenType
 
 
 class Parser:
-    def __init__(self, tokens: list[Token], *, explainer: Explainer, diags: DiagnosticSink) -> None:
+    def __init__(self, tokens: list[Token], *, explainer: Explainer, diags: DiagnosticSink, filename: str = "<source>") -> None:
         self.tokens = tokens
         self.explainer = explainer
         self.diags = diags
+        self.filename = filename
         self.current = 0
 
     def parse_program(self) -> ast.Program:
@@ -29,13 +30,19 @@ class Parser:
             # Constant modifier for a declaration. For milestone 1 this behaves like a normal declaration.
             if not self._match(
                 TokenType.COIN,
-                TokenType.DRAGON_GOLD,
+                TokenType.STAG,
                 TokenType.SCROLL,
                 TokenType.OATH,
                 TokenType.LEDGER,
             ):
                 t = self._peek()
-                self.diags.fatal("Expected a datatype after 'sigil'.", line=t.line, col=t.col)
+                self.diags.fatal(
+                    f"Expected a datatype after 'sigil' keyword, but found {t.lexeme!r}. "
+                    f"Valid types are: coin, stag, scroll, oath, ledger.",
+                    filename=self.filename,
+                    line=t.line,
+                    col=t.col
+                )
                 return None
             type_tok = self._previous()
             decl = self._var_decl(type_tok)
@@ -43,7 +50,7 @@ class Parser:
 
         if self._match(
             TokenType.COIN,
-            TokenType.DRAGON_GOLD,
+            TokenType.STAG,
             TokenType.SCROLL,
             TokenType.OATH,
             TokenType.LEDGER,
@@ -89,7 +96,7 @@ class Parser:
             return None
 
         t = self._peek()
-        self.diags.fatal(f"Unexpected token {t.lexeme!r}.", line=t.line, col=t.col)
+        self.diags.fatal(f"Unexpected token {t.lexeme!r}.", filename=self.filename, line=t.line, col=t.col)
         return None
 
     def _var_decl(self, type_tok: Token) -> ast.VarDecl:
@@ -105,7 +112,12 @@ class Parser:
             return
         # If the closing rune is missing, report a fatal syntax error instead of inserting one.
         t = self._peek()
-        self.diags.fatal("Expected the sacred ending rune '!' to terminate the statement.", line=t.line, col=t.col)
+        self.diags.fatal(
+            f"Expected the sacred ending rune '!' to terminate the statement, but found {t.lexeme!r} instead.",
+            filename=self.filename,
+            line=t.line,
+            col=t.col
+        )
         raise ParsePanic()
 
     def _expression(self) -> ast.Expr:
@@ -140,10 +152,6 @@ class Parser:
             return ast.Literal(self._previous().literal)
         if self._match(TokenType.STRING):
             return ast.Literal(self._previous().literal)
-        if self._match(TokenType.TRUE):
-            return ast.Literal(True)
-        if self._match(TokenType.FALSE):
-            return ast.Literal(False)
         if self._match(TokenType.IDENTIFIER):
             return ast.Identifier(self._previous().lexeme)
         if self._match(TokenType.LPAREN):
@@ -152,7 +160,13 @@ class Parser:
             return expr
 
         t = self._peek()
-        self.diags.fatal(f"Expected an expression but found {t.lexeme!r}.", line=t.line, col=t.col)
+        self.diags.fatal(
+            f"Expected an expression (number, string, identifier, or parenthesized expression) "
+            f"but found {t.lexeme!r}. Ensure your statement has valid syntax.",
+            filename=self.filename,
+            line=t.line,
+            col=t.col
+        )
         raise ParsePanic()
 
     def _council_stmt(self) -> ast.Council:
@@ -188,15 +202,15 @@ class Parser:
         return ast.WhileWinter(condition=cond, body=body)
 
     def _for_each_house_stmt(self) -> ast.ForEachHouse:
-        # for_each_house (coin|dragon_gold)? <name> claims <start> until_spring <end> then <block> end!
+        # for_each_house (coin|stag)? <name> claims <start> then <end> then <block> end!
         type_name = ast.TypeName.COIN
-        if self._match(TokenType.COIN, TokenType.DRAGON_GOLD):
+        if self._match(TokenType.COIN, TokenType.STAG):
             type_name = _type_from_token(self._previous().type)
 
         name = self._consume(TokenType.IDENTIFIER, "Expected an identifier after for_each_house.").lexeme
         self._consume(TokenType.CLAIMS, "Expected 'claims' after loop variable name.")
         start = self._expression()
-        self._consume(TokenType.UNTIL_SPRING, "Expected 'until_spring' after loop start expression.")
+        self._consume(TokenType.THEN, "Expected 'then' after loop start expression.")
         end = self._expression()
         self._consume(TokenType.THEN, "Expected 'then' after for_each_house range.")
         body = self._block_until({TokenType.END})
@@ -218,7 +232,12 @@ class Parser:
         if self._check(token_type):
             return self._advance()
         t = self._peek()
-        self.diags.fatal(message, line=t.line, col=t.col)
+        self.diags.fatal(
+            f"{message} Found {t.lexeme!r} instead.",
+            filename=self.filename,
+            line=t.line,
+            col=t.col
+        )
         raise ParsePanic()
 
     def _match(self, *types: TokenType) -> bool:
@@ -267,7 +286,7 @@ class ParsePanic(RuntimeError):
 def _type_from_token(tt: TokenType) -> ast.TypeName:
     return {
         TokenType.COIN: ast.TypeName.COIN,
-        TokenType.DRAGON_GOLD: ast.TypeName.DRAGON_GOLD,
+        TokenType.STAG: ast.TypeName.STAG,
         TokenType.SCROLL: ast.TypeName.SCROLL,
         TokenType.OATH: ast.TypeName.OATH,
         TokenType.LEDGER: ast.TypeName.LEDGER,

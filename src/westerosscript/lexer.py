@@ -54,6 +54,10 @@ class Lexer:
             self._string()
             return
 
+        if c == "'":
+            self._char()
+            return
+
         if c.isdigit():
             self._number()
             return
@@ -62,11 +66,6 @@ class Lexer:
             self._identifier()
             return
 
-        # Comments (PRD): whisper ... (single line) / chronicle ... end! (multi-line)
-        # For milestone 1 we treat them as whitespace by skipping at parse-time later;
-        # Here we just don't tokenize unknown punctuation.
-        self.diags.warn(f"Unrecognized character {c!r} ignored.", filename=self.filename, line=self.line, col=self._col())
-
     def _identifier(self) -> None:
         while self._peek().isalnum() or self._peek() == "_":
             self._advance()
@@ -74,29 +73,20 @@ class Lexer:
         text = self.source[self.start : self.current]
         token_type = KEYWORDS.get(text, TokenType.IDENTIFIER)
 
-        # Comments (CHEATSHEET): whisper ... (single line) / chronicle ... end! (multi-line)
+        # Comments (CHEATSHEET): whisper ... (single line)
         # Treat them as whitespace: do not emit tokens.
         if token_type == TokenType.WHISPER:
             # consume until end-of-line (but not the newline itself; _scan_token handles it)
             while self._peek() != "\n" and not self._is_at_end():
                 self._advance()
             return
-        if token_type == TokenType.CHRONICLE:
-            self._multiline_comment()
-            return
 
-        literal = None
-        if token_type == TokenType.TRUE:
-            literal = True
-        elif token_type == TokenType.FALSE:
-            literal = False
-
-        self._add(token_type, literal=literal)
+        self._add(token_type)
 
         # Maester narration for noteworthy discoveries
         if token_type in {
             TokenType.COIN,
-            TokenType.DRAGON_GOLD,
+            TokenType.STAG,
             TokenType.SCROLL,
             TokenType.OATH,
             TokenType.LEDGER,
@@ -118,6 +108,20 @@ class Lexer:
             while self._peek().isdigit():
                 self._advance()
 
+        # Check for invalid identifier starting with digit (e.g., "123abc")
+        if self._peek().isalpha() or self._peek() == "_":
+            self.diags.fatal(
+                "Invalid identifier — identifiers cannot start with digits. "
+                "An identifier must begin with a letter or underscore, not a number.",
+                filename=self.filename,
+                line=self.line,
+                col=self._col_at(self.start)
+            )
+            # Still consume the malformed identifier to avoid cascading errors
+            while self._peek().isalnum() or self._peek() == "_":
+                self._advance()
+            return
+
         lexeme = self.source[self.start : self.current]
         value = float(lexeme) if is_float else int(lexeme)
         self._add(TokenType.NUMBER, literal=value)
@@ -131,7 +135,12 @@ class Lexer:
             self._advance()
 
         if self._is_at_end():
-            self.diags.fatal("Unterminated string literal.", filename=self.filename, line=self.line, col=self._col())
+            self.diags.fatal(
+                "Unterminated string literal — expected closing '\"' before end of line.",
+                filename=self.filename,
+                line=self.line,
+                col=self._col()
+            )
             return
 
         # closing quote
@@ -140,27 +149,31 @@ class Lexer:
         value = self.source[self.start + 1 : self.current - 1]
         self._add(TokenType.STRING, literal=value)
 
-    def _multiline_comment(self) -> None:
-        """
-        Consume characters until the terminator sequence 'end!' is found.
-        The terminator itself is consumed and discarded.
-        """
-        while not self._is_at_end():
-            if self._peek() == "\n":
-                self.line += 1
-                self.line_start_idx = self.current + 1
-                self._advance()
-                continue
+    def _char(self) -> None:
+        """Parse a single character literal in apostrophes."""
+        if self._is_at_end():
+            self.diags.fatal(
+                "Unterminated char literal — expected character and closing apostrophe after opening apostrophe.",
+                filename=self.filename,
+                line=self.line,
+                col=self._col()
+            )
+            return
 
-            # Look for 'end!' in the raw stream
-            if self._peek() == "e" and self.source[self.current : self.current + 4] == "end!":
-                # consume 'end!'
-                self.current += 4
-                return
-
-            self._advance()
-
-        self.diags.fatal("Unterminated chronicle comment (expected 'end!').", filename=self.filename, line=self.line, col=self._col())
+        char = self._advance()
+        
+        if self._is_at_end() or self._peek() != "'":
+            self.diags.fatal(
+                "Char literal must contain exactly one character — expected closing apostrophe but found end of input or multiple characters.",
+                filename=self.filename,
+                line=self.line,
+                col=self._col()
+            )
+            return
+        
+        # closing apostrophe
+        self._advance()
+        self._add(TokenType.STRING, literal=char)
 
     def _add(self, type_: TokenType, *, literal: object | None = None) -> None:
         text = self.source[self.start : self.current]

@@ -6,7 +6,7 @@ from enum import Enum
 
 class TypeName(str, Enum):
     COIN = "coin"
-    DRAGON_GOLD = "dragon_gold"
+    STAG = "stag"
     SCROLL = "scroll"
     OATH = "oath"
     LEDGER = "ledger"
@@ -68,7 +68,7 @@ class WhileWinter(Stmt):
 @dataclass(frozen=True)
 class ForEachHouse(Stmt):
     """
-    `for_each_house (coin|dragon_gold)? <name> claims <start> until_spring <end> then <block> end!`
+    `for_each_house (coin|stag)? <name> claims <start> then <end> then <block> end!`
 
     Semantics (initial milestone):
     - Initializes `<name>` to `<start>` (coerced to coin/int)

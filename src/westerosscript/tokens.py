@@ -18,7 +18,7 @@ class TokenType(Enum):
     # Keywords: types
     SIGIL = auto()  # constant modifier
     COIN = auto()
-    DRAGON_GOLD = auto()
+    STAG = auto()
     SCROLL = auto()
     OATH = auto()
     LEDGER = auto()
@@ -35,19 +35,11 @@ class TokenType(Enum):
     FORGE = auto()
     DELIVER = auto()
     WHILE_WINTER = auto()
-    UNTIL_SPRING = auto()
     BREAK_CHAIN = auto()
     CONTINUE_MARCH = auto()
 
     # Comments
     WHISPER = auto()
-    CHRONICLE = auto()
-
-    # OOP keywords (parsed later)
-    GREAT_HOUSE = auto()
-    HEIR = auto()
-    BLOODLINE = auto()
-    INHERITS = auto()
 
     # Operators / relations
     CLAIMS = auto()  # assignment
@@ -59,16 +51,13 @@ class TokenType(Enum):
     GREATER_THAN = auto()  # >
     LESS_THAN = auto()  # <
 
-    TRUE = auto()
-    FALSE = auto()
-
     EOF = auto()
 
 
 KEYWORDS: dict[str, TokenType] = {
     "sigil": TokenType.SIGIL,
     "coin": TokenType.COIN,
-    "dragon_gold": TokenType.DRAGON_GOLD,
+    "stag": TokenType.STAG,
     "scroll": TokenType.SCROLL,
     "oath": TokenType.OATH,
     "ledger": TokenType.LEDGER,
@@ -83,15 +72,9 @@ KEYWORDS: dict[str, TokenType] = {
     "forge": TokenType.FORGE,
     "deliver": TokenType.DELIVER,
     "while_winter": TokenType.WHILE_WINTER,
-    "until_spring": TokenType.UNTIL_SPRING,
     "break_chain": TokenType.BREAK_CHAIN,
     "continue_march": TokenType.CONTINUE_MARCH,
     "whisper": TokenType.WHISPER,
-    "chronicle": TokenType.CHRONICLE,
-    "great_house": TokenType.GREAT_HOUSE,
-    "heir": TokenType.HEIR,
-    "bloodline": TokenType.BLOODLINE,
-    "inherits": TokenType.INHERITS,
     "claims": TokenType.CLAIMS,
     "unite": TokenType.UNITE,
     "clash": TokenType.CLASH,
@@ -100,8 +83,6 @@ KEYWORDS: dict[str, TokenType] = {
     "equals": TokenType.EQUALS,
     "greater_than": TokenType.GREATER_THAN,
     "less_than": TokenType.LESS_THAN,
-    "true": TokenType.TRUE,
-    "false": TokenType.FALSE,
 }
 
 

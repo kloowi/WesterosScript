@@ -99,11 +99,11 @@ class SemanticAnalyzer:
             if self.diags.has_fatal:
                 return
 
-            if start_t not in {ast.TypeName.COIN, ast.TypeName.DRAGON_GOLD} or end_t not in {
+            if start_t not in {ast.TypeName.COIN, ast.TypeName.STAG} or end_t not in {
                 ast.TypeName.COIN,
-                ast.TypeName.DRAGON_GOLD,
+                ast.TypeName.STAG,
             }:
-                self.diags.fatal("for_each_house bounds must be numeric wealth (coin or dragon_gold).")
+                self.diags.fatal("for_each_house bounds must be numeric wealth (coin or stag).")
                 return
 
             # Milestone behavior: loop variable is always recorded as coin (integer marching orders).
@@ -124,13 +124,14 @@ class SemanticAnalyzer:
     def _eval(self, expr: ast.Expr) -> tuple[object, ast.TypeName]:
         if isinstance(expr, ast.Literal):
             v = expr.value
-            if isinstance(v, bool):
-                return v, ast.TypeName.OATH
             if isinstance(v, int):
                 return v, ast.TypeName.COIN
             if isinstance(v, float):
-                return v, ast.TypeName.DRAGON_GOLD
+                return v, ast.TypeName.STAG
             if isinstance(v, str):
+                # Single character = OATH (char type), otherwise = SCROLL (string)
+                if len(v) == 1:
+                    return v, ast.TypeName.OATH
                 return v, ast.TypeName.SCROLL
             return v, ast.TypeName.UNKNOWN
 
@@ -147,15 +148,15 @@ class SemanticAnalyzer:
             if self.diags.has_fatal:
                 return None, ast.TypeName.UNKNOWN
 
-            if left_t not in {ast.TypeName.COIN, ast.TypeName.DRAGON_GOLD} or right_t not in {
+            if left_t not in {ast.TypeName.COIN, ast.TypeName.STAG} or right_t not in {
                 ast.TypeName.COIN,
-                ast.TypeName.DRAGON_GOLD,
+                ast.TypeName.STAG,
             }:
                 self.diags.fatal(f"Operator {expr.op!r} requires numeric wealth.")
                 return None, ast.TypeName.UNKNOWN
 
             # promote to float if needed
-            as_float = left_t == ast.TypeName.DRAGON_GOLD or right_t == ast.TypeName.DRAGON_GOLD
+            as_float = left_t == ast.TypeName.STAG or right_t == ast.TypeName.STAG
             a = float(left_v) if as_float else int(left_v)
             b = float(right_v) if as_float else int(right_v)
 
@@ -172,7 +173,7 @@ class SemanticAnalyzer:
                 self.diags.fatal(f"Unknown operator {expr.op!r}.")
                 return None, ast.TypeName.UNKNOWN
 
-            return (float(out), ast.TypeName.DRAGON_GOLD) if as_float else (int(out), ast.TypeName.COIN)
+            return (float(out), ast.TypeName.STAG) if as_float else (int(out), ast.TypeName.COIN)
 
         if isinstance(expr, ast.Compare):
             left_v, left_t = self._eval(expr.left)
@@ -181,22 +182,22 @@ class SemanticAnalyzer:
                 return None, ast.TypeName.UNKNOWN
 
             # comparisons are numeric-only for now
-            if left_t not in {ast.TypeName.COIN, ast.TypeName.DRAGON_GOLD} or right_t not in {
+            if left_t not in {ast.TypeName.COIN, ast.TypeName.STAG} or right_t not in {
                 ast.TypeName.COIN,
-                ast.TypeName.DRAGON_GOLD,
+                ast.TypeName.STAG,
             }:
                 self.diags.fatal(f"Comparison {expr.op!r} requires numeric wealth.")
                 return None, ast.TypeName.UNKNOWN
 
-            a = float(left_v) if left_t == ast.TypeName.DRAGON_GOLD else int(left_v)
-            b = float(right_v) if right_t == ast.TypeName.DRAGON_GOLD else int(right_v)
+            a = float(left_v) if left_t == ast.TypeName.STAG else int(left_v)
+            b = float(right_v) if right_t == ast.TypeName.STAG else int(right_v)
 
             if expr.op == "equals":
-                return a == b, ast.TypeName.OATH
+                return a == b, ast.TypeName.SCROLL
             if expr.op == "greater_than":
-                return a > b, ast.TypeName.OATH
+                return a > b, ast.TypeName.SCROLL
             if expr.op == "less_than":
-                return a < b, ast.TypeName.OATH
+                return a < b, ast.TypeName.SCROLL
 
             self.diags.fatal(f"Unknown comparison operator {expr.op!r}.")
             return None, ast.TypeName.UNKNOWN
@@ -205,29 +206,34 @@ class SemanticAnalyzer:
         return None, ast.TypeName.UNKNOWN
 
     def _ensure_oath(self, expr: ast.Expr) -> None:
+        """Ensure an expression is valid for a condition (comparisons allowed)."""
+        if isinstance(expr, ast.Compare):
+            # Comparisons are valid for conditions
+            return
+        # For other expressions, check that they evaluate to at least a proper type
         _v, t = self._eval(expr)
         if self.diags.has_fatal:
             return
-        if t != ast.TypeName.OATH:
-            self.diags.fatal("Control structure condition must be an oath (boolean).")
 
 
 def _is_compatible(target: ast.TypeName, value_type: ast.TypeName, value: object) -> bool:
     if target == ast.TypeName.COIN:
         return value_type == ast.TypeName.COIN
-    if target == ast.TypeName.DRAGON_GOLD:
-        return value_type in {ast.TypeName.COIN, ast.TypeName.DRAGON_GOLD}
+    if target == ast.TypeName.STAG:
+        return value_type in {ast.TypeName.COIN, ast.TypeName.STAG}
     if target == ast.TypeName.SCROLL:
         return value_type == ast.TypeName.SCROLL
     if target == ast.TypeName.OATH:
-        return value_type == ast.TypeName.OATH
+        # OATH (char) accepts single character strings
+        return value_type == ast.TypeName.OATH and isinstance(value, str) and len(value) == 1
     if target == ast.TypeName.LEDGER:
         return False
     return False
 
 
 def _coerce(target: ast.TypeName, value: object) -> object:
-    if target == ast.TypeName.DRAGON_GOLD and isinstance(value, int):
+    if target == ast.TypeName.STAG and isinstance(value, int):
         return float(value)
+    # OATH (char) needs to be a single character, already validated by _is_compatible
     return value
 

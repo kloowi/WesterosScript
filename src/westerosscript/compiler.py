@@ -7,7 +7,7 @@ from contextlib import redirect_stdout
 from westerosscript.errors import DiagnosticSink
 from westerosscript.explain import Explainer, NarrationLevel
 from westerosscript.lexer import Lexer
-from westerosscript.parser import Parser
+from westerosscript.parser import Parser, ParsePanic
 from westerosscript.semantic import SemanticAnalyzer
 from westerosscript.symbols import GreatLedger
 from westerosscript.interpreter import Interpreter
@@ -47,16 +47,44 @@ def analyze_source(
             for t in tokens:
                 print(t)
 
-        parser = Parser(tokens, explainer=explainer, diags=diags)
-        program = parser.parse_program()
+        # Stop if lexical analysis produced fatal errors
+        if diags.has_fatal:
+            diags.print()
+            return AnalyzeResult(
+                ok=False,
+                ledger=None,
+                output=buf.getvalue() if buf is not None else None,
+                ledger_text=None,
+                runtime_output=None,
+            )
 
-        if print_ast:
+        # Parse with error recovery; catch ParsePanic if unrecoverable
+        program = None
+        try:
+            parser = Parser(tokens, explainer=explainer, diags=diags, filename=filename)
+            program = parser.parse_program()
+        except ParsePanic:
+            pass
+
+        if print_ast and program is not None:
             explainer.section("AST")
             print(program)
 
+        # Stop if syntax analysis produced fatal errors
+        if diags.has_fatal:
+            diags.print()
+            return AnalyzeResult(
+                ok=False,
+                ledger=None,
+                output=buf.getvalue() if buf is not None else None,
+                ledger_text=None,
+                runtime_output=None,
+            )
+
         ledger = GreatLedger()
         sema = SemanticAnalyzer(ledger=ledger, explainer=explainer, diags=diags)
-        sema.analyze(program)
+        if program is not None:
+            sema.analyze(program)
 
         if run and not diags.has_fatal:
             rt = Interpreter(ledger=ledger).run(program)

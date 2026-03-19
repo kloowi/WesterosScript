@@ -5,9 +5,9 @@ claims - assignment
 
 DATA TYPES
 coin - int
-dragon_gold - float
+stag - float
 scroll - string
-oath - Boolean
+oath - char
 
 IO OPERATOINS
 summon - input
@@ -21,7 +21,6 @@ another_path - else if
 CONTROL STRUCTURES
 for_each_house for
 while_winter while
-until_spring do-while
 break_chain break
 continue_march continue
 
@@ -34,7 +33,10 @@ equals ==
 greater_than >
 less_than <
 
+FUNCTION
+dec
+
 COMMENTS
 whisper single-line
-chronicle multi-line
+
 
