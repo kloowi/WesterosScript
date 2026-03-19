@@ -7,6 +7,8 @@ from enum import Enum, auto
 class TokenType(Enum):
     # Single-character
     BANG = auto()  # !
+    LPAREN = auto()  # (
+    RPAREN = auto()  # )
 
     # Literals / identifiers
     IDENTIFIER = auto()

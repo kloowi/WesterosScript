@@ -42,6 +42,14 @@ class Lexer:
             self._add(TokenType.BANG)
             return
 
+        if c == "(":
+            self._add(TokenType.LPAREN)
+            return
+
+        if c == ")":
+            self._add(TokenType.RPAREN)
+            return
+
         if c == '"':
             self._string()
             return

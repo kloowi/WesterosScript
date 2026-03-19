@@ -146,6 +146,10 @@ class Parser:
             return ast.Literal(False)
         if self._match(TokenType.IDENTIFIER):
             return ast.Identifier(self._previous().lexeme)
+        if self._match(TokenType.LPAREN):
+            expr = self._expression()
+            self._consume(TokenType.RPAREN, "Expected ')' to close grouped expression.")
+            return expr
 
         t = self._peek()
         self.diags.fatal(f"Expected an expression but found {t.lexeme!r}.", line=t.line, col=t.col)
