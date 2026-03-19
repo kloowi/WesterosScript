@@ -1,0 +1,9 @@
+whisper Verify local scoping with bare block statements
+coin x claims 100!
+raven x!
+{
+  coin y claims 200!
+  raven y!
+}
+raven x!
+whisper If y is not accessible here, scoping worked!

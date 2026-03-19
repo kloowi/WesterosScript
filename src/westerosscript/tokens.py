@@ -9,6 +9,8 @@ class TokenType(Enum):
     BANG = auto()  # !
     LPAREN = auto()  # (
     RPAREN = auto()  # )
+    LBRACE = auto()  # {
+    RBRACE = auto()  # }
 
     # Literals / identifiers
     IDENTIFIER = auto()

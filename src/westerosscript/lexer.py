@@ -50,6 +50,14 @@ class Lexer:
             self._add(TokenType.RPAREN)
             return
 
+        if c == "{":
+            self._add(TokenType.LBRACE)
+            return
+
+        if c == "}":
+            self._add(TokenType.RBRACE)
+            return
+
         if c == '"':
             self._string()
             return

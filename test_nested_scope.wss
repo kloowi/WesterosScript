@@ -1,0 +1,11 @@
+whisper Test complex scoping
+coin a claims 10!
+{
+  coin b claims 20!
+  stag c claims 3.14!
+  {
+    oath d claims 'X'!
+    essence e claims 2.71!
+  }
+}
+raven a!

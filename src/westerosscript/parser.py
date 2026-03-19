@@ -99,6 +99,13 @@ class Parser:
             self._consume_bang_with_recovery()
             return ast.ContinueMarch()
 
+        # Bare block statement: { ... }
+        if self._match(TokenType.LBRACE):
+            self.explainer.say("COUNCIL", "A scope is opened; the realm narrows its focus.")
+            block = self._curly_block()
+            self.explainer.say("COUNCIL", "✓ The scope is sealed.")
+            return block
+
         # Assignment: <identifier> claims <expr>!
         if self._check(TokenType.IDENTIFIER) and self._peek_next().type == TokenType.CLAIMS:
             self.explainer.say("COUNCIL", "A vassal declares their claim upon a treasury.")
@@ -187,39 +194,36 @@ class Parser:
         raise ParsePanic()
 
     def _council_stmt(self) -> ast.Council:
-        # council <cond> then <block> (another_path <cond> then <block>)* (otherwise <block>)? end!
+        # council <cond> { <block> } (another_path <cond> { <block> })* (otherwise { <block> })?
         branches: list[tuple[ast.Expr, ast.Block]] = []
 
         cond = self._expression()
-        self._consume(TokenType.THEN, "Expected 'then' after council condition.")
-        then_block = self._block_until({TokenType.ANOTHER_PATH, TokenType.OTHERWISE, TokenType.END})
+        self._consume(TokenType.LBRACE, "Expected '{' after council condition.")
+        then_block = self._curly_block()
         branches.append((cond, then_block))
 
         while self._match(TokenType.ANOTHER_PATH):
             c = self._expression()
-            self._consume(TokenType.THEN, "Expected 'then' after another_path condition.")
-            b = self._block_until({TokenType.ANOTHER_PATH, TokenType.OTHERWISE, TokenType.END})
+            self._consume(TokenType.LBRACE, "Expected '{' after another_path condition.")
+            b = self._curly_block()
             branches.append((c, b))
 
         otherwise_block: ast.Block | None = None
         if self._match(TokenType.OTHERWISE):
-            otherwise_block = self._block_until({TokenType.END})
+            self._consume(TokenType.LBRACE, "Expected '{' after otherwise keyword.")
+            otherwise_block = self._curly_block()
 
-        self._consume(TokenType.END, "Expected 'end' to close council block.")
-        self._consume_bang_with_recovery()
         return ast.Council(branches=branches, otherwise_block=otherwise_block)
 
     def _while_stmt(self) -> ast.WhileWinter:
-        # while_winter <cond> then <block> end!
+        # while_winter <cond> { <block> }
         cond = self._expression()
-        self._consume(TokenType.THEN, "Expected 'then' after while_winter condition.")
-        body = self._block_until({TokenType.END})
-        self._consume(TokenType.END, "Expected 'end' to close while_winter block.")
-        self._consume_bang_with_recovery()
+        self._consume(TokenType.LBRACE, "Expected '{' after while_winter condition.")
+        body = self._curly_block()
         return ast.WhileWinter(condition=cond, body=body)
 
     def _for_each_house_stmt(self) -> ast.ForEachHouse:
-        # for_each_house (coin|stag)? <name> claims <start> then <end> then <block> end!
+        # for_each_house (coin|stag)? <name> claims <start> then <end> { <block> }
         type_name = ast.TypeName.COIN
         if self._match(TokenType.COIN, TokenType.STAG):
             type_name = _type_from_token(self._previous().type)
@@ -229,20 +233,20 @@ class Parser:
         start = self._expression()
         self._consume(TokenType.THEN, "Expected 'then' after loop start expression.")
         end = self._expression()
-        self._consume(TokenType.THEN, "Expected 'then' after for_each_house range.")
-        body = self._block_until({TokenType.END})
-        self._consume(TokenType.END, "Expected 'end' to close for_each_house block.")
-        self._consume_bang_with_recovery()
+        self._consume(TokenType.LBRACE, "Expected '{' after for_each_house range.")
+        body = self._curly_block()
         return ast.ForEachHouse(type_name=type_name, name=name, start=start, end=end, body=body)
 
-    def _block_until(self, end_tokens: set[TokenType]) -> ast.Block:
+    def _curly_block(self) -> ast.Block:
+        # Assumes the opening { has already been consumed
         statements: list[ast.Stmt] = []
-        while not self._is_at_end() and self._peek().type not in end_tokens:
+        while not self._is_at_end() and self._peek().type != TokenType.RBRACE:
             stmt = self._statement()
             if stmt is not None:
                 statements.append(stmt)
             else:
                 self._synchronize()
+        self._consume(TokenType.RBRACE, "Expected '}' to close block.")
         return ast.Block(statements=statements)
 
     def _consume(self, token_type: TokenType, message: str) -> Token:

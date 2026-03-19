@@ -11,6 +11,22 @@ class SemanticAnalyzer:
         self.ledger = ledger
         self.explainer = explainer
         self.diags = diags
+        self._scope_depth: int = 0  # Track scope depth during analysis (don't modify ledger stack)
+
+    def _push_scope(self) -> None:
+        """Push a new scope level during semantic analysis."""
+        self._scope_depth += 1
+        self.ledger._current_level = self._scope_depth
+        # Extend offset stack if needed
+        while len(self.ledger._offset_stack) <= self._scope_depth:
+            self.ledger._offset_stack.append(0)
+        # Reset offset for this level
+        self.ledger._offset_stack[self._scope_depth] = 0
+
+    def _pop_scope(self) -> None:
+        """Pop scope level during semantic analysis."""
+        self._scope_depth -= 1
+        self.ledger._current_level = self._scope_depth
 
     def analyze(self, program: ast.Program) -> None:
         self.explainer.section("THE CITADEL RECORDS THE DECREE")
@@ -60,8 +76,8 @@ class SemanticAnalyzer:
                 )
                 return
 
-            stored_value = _coerce(sym.type_name, value)
-            self.ledger.define(stmt.name, sym.type_name, stored_value)
+            # Don't call define() for assignments - that would re-declare and mess up offsets.
+            # Just type-check; interpretation will handle the actual value update.
             return
 
         if isinstance(stmt, ast.Raven):
@@ -70,10 +86,15 @@ class SemanticAnalyzer:
             return
 
         if isinstance(stmt, ast.Block):
-            for s in stmt.statements:
-                if self.diags.has_fatal:
-                    return
-                self._stmt(s)
+            # Increase scope depth for semantic analysis
+            self._push_scope()
+            try:
+                for s in stmt.statements:
+                    if self.diags.has_fatal:
+                        break
+                    self._stmt(s)
+            finally:
+                self._pop_scope()
             return
 
         if isinstance(stmt, ast.Council):
@@ -82,9 +103,18 @@ class SemanticAnalyzer:
                 self._ensure_oath(cond)
                 if self.diags.has_fatal:
                     return
-                self._stmt(block)
+                # Each branch is a block with its own scope
+                self._push_scope()
+                try:
+                    self._stmt(block)
+                finally:
+                    self._pop_scope()
             if stmt.otherwise_block is not None:
-                self._stmt(stmt.otherwise_block)
+                self._push_scope()
+                try:
+                    self._stmt(stmt.otherwise_block)
+                finally:
+                    self._pop_scope()
             return
 
         if isinstance(stmt, ast.WhileWinter):
@@ -92,7 +122,12 @@ class SemanticAnalyzer:
             self._ensure_oath(stmt.condition)
             if self.diags.has_fatal:
                 return
-            self._stmt(stmt.body)
+            # Loop body is a scope
+            self._push_scope()
+            try:
+                self._stmt(stmt.body)
+            finally:
+                self._pop_scope()
             return
 
         if isinstance(stmt, ast.ForEachHouse):
@@ -109,13 +144,18 @@ class SemanticAnalyzer:
                 self.diags.fatal("for_each_house bounds must be numeric wealth (coin or stag).")
                 return
 
-            # Milestone behavior: loop variable is always recorded as coin (integer marching orders).
-            start_i = int(start_v)
-            self.explainer.say("CITADEL", f"Recording loop variable {stmt.name!r} into the Great Ledger as 'coin'.")
-            self.ledger.define(stmt.name, ast.TypeName.COIN, start_i)
+            # Create loop scope for loop variable and body
+            self._push_scope()
+            try:
+                # Milestone behavior: loop variable is always recorded as coin (integer marching orders).
+                start_i = int(start_v)
+                self.explainer.say("CITADEL", f"Recording loop variable {stmt.name!r} into the Great Ledger as 'coin'.")
+                self.ledger.define(stmt.name, ast.TypeName.COIN, start_i)
 
-            # Typecheck the body in the current (global) ledger context.
-            self._stmt(stmt.body)
+                # Typecheck the body in the new (loop) scope.
+                self._stmt(stmt.body)
+            finally:
+                self._pop_scope()
             return
 
         if isinstance(stmt, ast.BreakChain) or isinstance(stmt, ast.ContinueMarch):

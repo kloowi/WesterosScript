@@ -22,6 +22,7 @@ def _build_parser() -> argparse.ArgumentParser:
     analyze.add_argument("--print-tokens", action="store_true", help="Print tokens after lexing.")
     analyze.add_argument("--print-ast", action="store_true", help="Print AST after parsing.")
     analyze.add_argument("--print-ledger", action="store_true", default=True, help="Print symbol table.")
+    analyze.add_argument("--run", action="store_true", help="Execute the program (runtime interpretation).")
     return p
 
 
@@ -43,7 +44,10 @@ def main(argv: list[str] | None = None) -> int:
             print_ast=args.print_ast,
             print_ledger=args.print_ledger,
             filename=args.path,
+            run=args.run,
         )
+        if args.run and result.runtime_output:
+            print(result.runtime_output)
         return 0 if result.ok else 1
 
     return 2

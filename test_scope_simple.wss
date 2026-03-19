@@ -1,0 +1,7 @@
+whisper Test basic scoping: variable shadowing in council block
+coin x claims 100!
+raven x!
+council x greater_than 50 {
+  raven x!
+}
+raven x!
