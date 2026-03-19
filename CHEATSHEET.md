@@ -6,6 +6,7 @@ claims - assignment
 DATA TYPES
 coin - int
 stag - float
+essence - double
 scroll - string
 oath - char
 

@@ -42,7 +42,10 @@ class SemanticAnalyzer:
         if isinstance(stmt, ast.Assign):
             sym = self.ledger.get(stmt.name)
             if sym is None:
-                self.diags.fatal(f"Unknown identifier {stmt.name!r}.")
+                self.diags.fatal(
+                    f"Undeclared variable {stmt.name!r}. The variable must be declared before assignment.\n\n"
+                    "The Citadel does not recognize this decree."
+                )
                 return
 
             value, value_type = self._eval(stmt.value)
@@ -138,7 +141,10 @@ class SemanticAnalyzer:
         if isinstance(expr, ast.Identifier):
             sym = self.ledger.get(expr.name)
             if sym is None:
-                self.diags.fatal(f"Unknown identifier {expr.name!r}.")
+                self.diags.fatal(
+                    f"Undeclared variable {expr.name!r}. The variable must be declared before use.\n\n"
+                    "The Citadel does not recognize this decree."
+                )
                 return None, ast.TypeName.UNKNOWN
             return sym.value, sym.type_name
 
@@ -148,15 +154,16 @@ class SemanticAnalyzer:
             if self.diags.has_fatal:
                 return None, ast.TypeName.UNKNOWN
 
-            if left_t not in {ast.TypeName.COIN, ast.TypeName.STAG} or right_t not in {
+            if left_t not in {ast.TypeName.COIN, ast.TypeName.STAG, ast.TypeName.ESSENCE} or right_t not in {
                 ast.TypeName.COIN,
                 ast.TypeName.STAG,
+                ast.TypeName.ESSENCE,
             }:
                 self.diags.fatal(f"Operator {expr.op!r} requires numeric wealth.")
                 return None, ast.TypeName.UNKNOWN
 
             # promote to float if needed
-            as_float = left_t == ast.TypeName.STAG or right_t == ast.TypeName.STAG
+            as_float = left_t in {ast.TypeName.STAG, ast.TypeName.ESSENCE} or right_t in {ast.TypeName.STAG, ast.TypeName.ESSENCE}
             a = float(left_v) if as_float else int(left_v)
             b = float(right_v) if as_float else int(right_v)
 
@@ -173,7 +180,7 @@ class SemanticAnalyzer:
                 self.diags.fatal(f"Unknown operator {expr.op!r}.")
                 return None, ast.TypeName.UNKNOWN
 
-            return (float(out), ast.TypeName.STAG) if as_float else (int(out), ast.TypeName.COIN)
+            return (float(out), ast.TypeName.ESSENCE if (left_t == ast.TypeName.ESSENCE or right_t == ast.TypeName.ESSENCE) else ast.TypeName.STAG) if as_float else (int(out), ast.TypeName.COIN)
 
         if isinstance(expr, ast.Compare):
             left_v, left_t = self._eval(expr.left)
@@ -182,15 +189,16 @@ class SemanticAnalyzer:
                 return None, ast.TypeName.UNKNOWN
 
             # comparisons are numeric-only for now
-            if left_t not in {ast.TypeName.COIN, ast.TypeName.STAG} or right_t not in {
+            if left_t not in {ast.TypeName.COIN, ast.TypeName.STAG, ast.TypeName.ESSENCE} or right_t not in {
                 ast.TypeName.COIN,
                 ast.TypeName.STAG,
+                ast.TypeName.ESSENCE,
             }:
                 self.diags.fatal(f"Comparison {expr.op!r} requires numeric wealth.")
                 return None, ast.TypeName.UNKNOWN
 
-            a = float(left_v) if left_t == ast.TypeName.STAG else int(left_v)
-            b = float(right_v) if right_t == ast.TypeName.STAG else int(right_v)
+            a = float(left_v) if left_t in {ast.TypeName.STAG, ast.TypeName.ESSENCE} else int(left_v)
+            b = float(right_v) if right_t in {ast.TypeName.STAG, ast.TypeName.ESSENCE} else int(right_v)
 
             if expr.op == "equals":
                 return a == b, ast.TypeName.SCROLL
@@ -221,6 +229,8 @@ def _is_compatible(target: ast.TypeName, value_type: ast.TypeName, value: object
         return value_type == ast.TypeName.COIN
     if target == ast.TypeName.STAG:
         return value_type in {ast.TypeName.COIN, ast.TypeName.STAG}
+    if target == ast.TypeName.ESSENCE:
+        return value_type in {ast.TypeName.COIN, ast.TypeName.STAG, ast.TypeName.ESSENCE}
     if target == ast.TypeName.SCROLL:
         return value_type == ast.TypeName.SCROLL
     if target == ast.TypeName.OATH:
@@ -232,7 +242,7 @@ def _is_compatible(target: ast.TypeName, value_type: ast.TypeName, value: object
 
 
 def _coerce(target: ast.TypeName, value: object) -> object:
-    if target == ast.TypeName.STAG and isinstance(value, int):
+    if target in {ast.TypeName.STAG, ast.TypeName.ESSENCE} and isinstance(value, int):
         return float(value)
     # OATH (char) needs to be a single character, already validated by _is_compatible
     return value

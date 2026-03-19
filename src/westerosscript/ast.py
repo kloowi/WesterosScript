@@ -7,6 +7,7 @@ from enum import Enum
 class TypeName(str, Enum):
     COIN = "coin"
     STAG = "stag"
+    ESSENCE = "essence"
     SCROLL = "scroll"
     OATH = "oath"
     LEDGER = "ledger"

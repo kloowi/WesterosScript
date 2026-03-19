@@ -31,6 +31,7 @@ class Parser:
             if not self._match(
                 TokenType.COIN,
                 TokenType.STAG,
+                TokenType.ESSENCE,
                 TokenType.SCROLL,
                 TokenType.OATH,
                 TokenType.LEDGER,
@@ -38,7 +39,7 @@ class Parser:
                 t = self._peek()
                 self.diags.fatal(
                     f"Expected a datatype after 'sigil' keyword, but found {t.lexeme!r}. "
-                    f"Valid types are: coin, stag, scroll, oath, ledger.",
+                    f"Valid types are: coin, stag, essence, scroll, oath, ledger.",
                     filename=self.filename,
                     line=t.line,
                     col=t.col
@@ -51,6 +52,7 @@ class Parser:
         if self._match(
             TokenType.COIN,
             TokenType.STAG,
+            TokenType.ESSENCE,
             TokenType.SCROLL,
             TokenType.OATH,
             TokenType.LEDGER,
@@ -63,33 +65,48 @@ class Parser:
             return decl
 
         if self._match(TokenType.RAVEN):
+            self.explainer.say("COUNCIL", "A raven shall carry a message forth.")
             value = self._expression()
             self._consume_bang_with_recovery()
+            self.explainer.say("COUNCIL", "✓ The raven has been dispatched.")
             return ast.Raven(value=value)
 
         if self._match(TokenType.COUNCIL):
-            return self._council_stmt()
+            self.explainer.say("COUNCIL", "The Small Council convenes to deliberate branching paths.")
+            stmt = self._council_stmt()
+            self.explainer.say("COUNCIL", "✓ The council's decree is sealed.")
+            return stmt
 
         if self._match(TokenType.WHILE_WINTER):
-            return self._while_stmt()
+            self.explainer.say("COUNCIL", "Winter approaches: a loop shall persist while conditions hold.")
+            stmt = self._while_stmt()
+            self.explainer.say("COUNCIL", "✓ The winter cycle is fortified.")
+            return stmt
 
         if self._match(TokenType.FOR_EACH_HOUSE):
-            return self._for_each_house_stmt()
+            self.explainer.say("COUNCIL", "The great houses march in order across the realm.")
+            stmt = self._for_each_house_stmt()
+            self.explainer.say("COUNCIL", "✓ The march of houses is decreed.")
+            return stmt
 
         if self._match(TokenType.BREAK_CHAIN):
+            self.explainer.say("COUNCIL", "The chain of command is broken; the loop shatters.")
             self._consume_bang_with_recovery()
             return ast.BreakChain()
 
         if self._match(TokenType.CONTINUE_MARCH):
+            self.explainer.say("COUNCIL", "The march continues to the next chapter.")
             self._consume_bang_with_recovery()
             return ast.ContinueMarch()
 
         # Assignment: <identifier> claims <expr>!
         if self._check(TokenType.IDENTIFIER) and self._peek_next().type == TokenType.CLAIMS:
+            self.explainer.say("COUNCIL", "A vassal declares their claim upon a treasury.")
             name = self._advance().lexeme
             self._consume(TokenType.CLAIMS, "Expected 'claims' assignment operator.")
             value = self._expression()
             self._consume_bang_with_recovery()
+            self.explainer.say("COUNCIL", f"✓ {name!r} shall hold this wealth.")
             return ast.Assign(name=name, value=value)
 
         if self._peek().type == TokenType.EOF:
@@ -287,6 +304,7 @@ def _type_from_token(tt: TokenType) -> ast.TypeName:
     return {
         TokenType.COIN: ast.TypeName.COIN,
         TokenType.STAG: ast.TypeName.STAG,
+        TokenType.ESSENCE: ast.TypeName.ESSENCE,
         TokenType.SCROLL: ast.TypeName.SCROLL,
         TokenType.OATH: ast.TypeName.OATH,
         TokenType.LEDGER: ast.TypeName.LEDGER,

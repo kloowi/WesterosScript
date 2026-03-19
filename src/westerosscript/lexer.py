@@ -87,6 +87,7 @@ class Lexer:
         if token_type in {
             TokenType.COIN,
             TokenType.STAG,
+            TokenType.ESSENCE,
             TokenType.SCROLL,
             TokenType.OATH,
             TokenType.LEDGER,

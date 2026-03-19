@@ -17,8 +17,9 @@ class TokenType(Enum):
 
     # Keywords: types
     SIGIL = auto()  # constant modifier
-    COIN = auto()
-    STAG = auto()
+    COIN = auto()  # int
+    STAG = auto()  # float
+    ESSENCE = auto()  # double
     SCROLL = auto()
     OATH = auto()
     LEDGER = auto()
@@ -58,6 +59,7 @@ KEYWORDS: dict[str, TokenType] = {
     "sigil": TokenType.SIGIL,
     "coin": TokenType.COIN,
     "stag": TokenType.STAG,
+    "essence": TokenType.ESSENCE,
     "scroll": TokenType.SCROLL,
     "oath": TokenType.OATH,
     "ledger": TokenType.LEDGER,
