@@ -111,8 +111,7 @@ class Lexer:
         # Check for invalid identifier starting with digit (e.g., "123abc")
         if self._peek().isalpha() or self._peek() == "_":
             self.diags.fatal(
-                "Invalid identifier — identifiers cannot start with digits. "
-                "An identifier must begin with a letter or underscore, not a number.",
+                "Invalid identifier — identifiers cannot start with digits. ",
                 filename=self.filename,
                 line=self.line,
                 col=self._col_at(self.start)
