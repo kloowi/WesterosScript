@@ -20,7 +20,8 @@ class Diagnostic:
 
     def format(self) -> str:
         loc = ""
-        if self.filename is not None and self.line is not None and self.col is not None:
+        # Only show location for real files (not UI placeholder "<ui>")
+        if self.filename is not None and self.filename != "<ui>" and self.line is not None and self.col is not None:
             loc = f"{self.filename}:{self.line}:{self.col}: "
         prefix = {
             Severity.INFO: "[INFO]",
