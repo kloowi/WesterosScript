@@ -241,10 +241,14 @@
         </div>
 
         <div class="flex items-center gap-2">
-          <div class="flex items-center gap-2 px-3 py-1 bg-background-dark/80 rounded border border-primary/20">
-            <span class="material-symbols-outlined text-primary text-[14px]">scrollable_header</span>
-            <span id="filename" class="text-[10px] font-bold text-primary/90">program.wss</span>
-          </div>
+          <button
+            id="cheatsheetBtn"
+            class="btn flex items-center gap-2 px-3 py-1 bg-background-dark/80 rounded border border-primary/20 hover:border-primary/40 hover:bg-primary/10 transition-colors"
+            type="button"
+          >
+            <span class="material-symbols-outlined text-primary text-[14px]">help</span>
+            <span class="text-[10px] font-bold text-primary/90 uppercase">Cheat Sheet</span>
+          </button>
           <button
             id="analyzeBtn"
             class="btn px-3 py-1 rounded border border-primary/30 bg-primary/10 hover:bg-primary/20 text-[10px] font-bold tracking-[0.2em] uppercase text-primary"
@@ -291,6 +295,24 @@ raven gold!
           <div class="flex-1 p-4 overflow-y-auto font-mono text-xs custom-scrollbar">
             <div id="output" class="terminal">(ready)</div>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Cheatsheet Modal -->
+    <div id="cheatsheetModal" class="hidden fixed inset-0 flex items-center justify-center z-50 p-4" style="background-image: radial-gradient(900px 520px at 25% 15%, rgba(255, 217, 0, 0.10) 0%, rgba(255, 217, 0, 0) 60%), radial-gradient(800px 520px at 80% 85%, rgba(66, 245, 176, 0.07) 0%, rgba(66, 245, 176, 0) 55%), radial-gradient(900px 620px at 65% 20%, rgba(255, 140, 0, 0.06) 0%, rgba(255, 140, 0, 0) 55%), url('APP-background.png'); background-size: auto, auto, auto, cover; background-position: center, center, center, center;">
+      <div class="w-full max-w-2xl h-[580px] flex flex-col rounded-2xl glass-effect shadow-[0_0_40px_rgba(255,217,0,0.18),inset_0_0_26px_rgba(255,217,0,0.06)] overflow-hidden">
+        <div class="flex items-center justify-between px-5 py-3 border-b border-primary/20 bg-primary/5">
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary text-sm">help_center</span>
+            <h2 class="text-[10px] font-bold tracking-[0.2em] text-primary/70 uppercase">Westeros Cheat Sheet</h2>
+          </div>
+          <button id="closeCheatsheetBtn" class="text-slate-400 hover:text-primary transition-colors">
+            <span class="material-symbols-outlined text-sm">close</span>
+          </button>
+        </div>
+        <div class="flex-1 overflow-y-auto px-6 py-4 custom-scrollbar">
+          <div id="cheatsheetContent" class="grid grid-cols-2 gap-6 text-xs text-slate-300"></div>
         </div>
       </div>
     </div>
@@ -548,6 +570,109 @@ raven gold!
           analyzeBtn.textContent = "Run";
         }
       }
+
+      // Cheatsheet modal functionality
+      const cheatsheetBtn = document.getElementById("cheatsheetBtn");
+      const cheatsheetModal = document.getElementById("cheatsheetModal");
+      const closeCheatsheetBtn = document.getElementById("closeCheatsheetBtn");
+      const cheatsheetContentEl = document.getElementById("cheatsheetContent");
+
+      const cheatsheetData = [
+        {
+          section: "VARIABLES & CONSTANTS",
+          items: [
+            { key: "sigil", desc: "constant" },
+            { key: "ledger", desc: "array" },
+            { key: "claims", desc: "assignment" },
+          ],
+        },
+        {
+          section: "DATA TYPES",
+          items: [
+            { key: "coin", desc: "int" },
+            { key: "stag", desc: "float" },
+            { key: "essence", desc: "double" },
+            { key: "scroll", desc: "string" },
+            { key: "oath", desc: "char" },
+          ],
+        },
+        {
+          section: "IO OPERATIONS",
+          items: [
+            { key: "summon", desc: "input" },
+            { key: "raven", desc: "output" },
+          ],
+        },
+        {
+          section: "IF / ELSE",
+          items: [
+            { key: "council", desc: "if" },
+            { key: "otherwise", desc: "else" },
+            { key: "another_path", desc: "else if" },
+          ],
+        },
+        {
+          section: "CONTROL STRUCTURES",
+          items: [
+            { key: "for_each_house", desc: "for" },
+            { key: "while_winter", desc: "while" },
+            { key: "break_chain", desc: "break" },
+            { key: "continue_march", desc: "continue" },
+          ],
+        },
+        {
+          section: "ARITHMETIC OPERATORS",
+          items: [
+            { key: "unite", desc: "+" },
+            { key: "clash", desc: "-" },
+            { key: "forge", desc: "*" },
+            { key: "divide_realm", desc: "/" },
+            { key: "equals", desc: "==" },
+            { key: "greater_than", desc: ">" },
+            { key: "less_than", desc: "<" },
+          ],
+        },
+        {
+          section: "FUNCTIONS",
+          items: [{ key: "dec", desc: "define function" }],
+        },
+        {
+          section: "COMMENTS",
+          items: [{ key: "whisper", desc: "single-line" }],
+        },
+      ];
+
+      // Render cheatsheet with formatted sections
+      cheatsheetContentEl.innerHTML = cheatsheetData
+        .map((section) => {
+          return `
+        <div class="space-y-3">
+          <div class="text-primary font-bold text-xs uppercase tracking-wider border-b border-primary/20 pb-2">
+            ${section.section}
+          </div>
+          <div class="space-y-2">
+            ${section.items
+              .map((item) => `<div class="font-mono"><span class="text-primary font-bold">${item.key}</span> <span class="text-slate-400">→</span> <span class="text-slate-300">${item.desc}</span></div>`)
+              .join("")}
+          </div>
+        </div>
+        `;
+        })
+        .join("");
+
+      cheatsheetBtn.addEventListener("click", () => {
+        cheatsheetModal.classList.remove("hidden");
+      });
+
+      closeCheatsheetBtn.addEventListener("click", () => {
+        cheatsheetModal.classList.add("hidden");
+      });
+
+      cheatsheetModal.addEventListener("click", (e) => {
+        if (e.target === cheatsheetModal) {
+          cheatsheetModal.classList.add("hidden");
+        }
+      });
 
       analyzeBtn.addEventListener("click", analyze);
       tabAnalysis.addEventListener("click", () => setTab("analysis"));

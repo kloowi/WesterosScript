@@ -1,0 +1,7 @@
+for_each_house coin i claims 0 then 10 {
+  council i equals 5 {
+    break_chain!
+  }
+  raven i!
+}
+raven "done"!
