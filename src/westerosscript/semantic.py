@@ -40,6 +40,8 @@ class SemanticAnalyzer:
     def _stmt(self, stmt: ast.Stmt) -> None:
         if isinstance(stmt, ast.VarDecl):
             value, value_type = self._eval(stmt.initializer)
+            if self.diags.has_fatal:
+                return
             self.explainer.say("CITADEL", f"The variable {stmt.name!r} is declared as type {stmt.type_name.value!r}.")
             if not _is_compatible(stmt.type_name, value_type, value):
                 self.diags.fatal(

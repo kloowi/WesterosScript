@@ -1,9 +1,0 @@
-whisper Test multiple parser narrations
-coin x claims 10!
-x claims 20!
-council x equals 20 {
-  raven x!
-}
-otherwise {
-  raven 0!
-}
