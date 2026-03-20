@@ -4,6 +4,7 @@ from dataclasses import dataclass
 import io
 from contextlib import redirect_stdout
 
+from westerosscript import ast
 from westerosscript.errors import DiagnosticSink
 from westerosscript.explain import Explainer, NarrationLevel
 from westerosscript.lexer import Lexer
@@ -20,6 +21,7 @@ class AnalyzeResult:
     output: str | None = None
     ledger_text: str | None = None
     runtime_output: str | None = None
+    program: ast.Program | None = None
 
 
 def analyze_source(
@@ -56,6 +58,7 @@ def analyze_source(
                 output=buf.getvalue() if buf is not None else None,
                 ledger_text=None,
                 runtime_output=None,
+                program=None,
             )
 
         # Parse with error recovery; catch ParsePanic if unrecoverable
@@ -65,6 +68,15 @@ def analyze_source(
             program = parser.parse_program()
         except ParsePanic:
             pass
+
+        # Print recovery summary after parsing
+        if diags.recovery_count > 0:
+            explainer.recovery_summary(
+                total_errors=len(diags.diags),
+                recovery_count=diags.recovery_count,
+                auto_insert_count=diags.auto_insert_count,
+                panic_skip_count=diags.panic_skip_count,
+            )
 
         if print_ast and program is not None:
             explainer.section("AST")
@@ -79,6 +91,7 @@ def analyze_source(
                 output=buf.getvalue() if buf is not None else None,
                 ledger_text=None,
                 runtime_output=None,
+                program=program,
             )
 
         ledger = GreatLedger()
@@ -102,6 +115,7 @@ def analyze_source(
         output=buf.getvalue() if buf is not None else None,
         ledger_text=ledger_text if capture_output else None,
         runtime_output=runtime_out,
+        program=program,
     )
 
 

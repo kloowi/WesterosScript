@@ -10,7 +10,6 @@ class TypeName(str, Enum):
     ESSENCE = "essence"
     SCROLL = "scroll"
     OATH = "oath"
-    LEDGER = "ledger"
     UNKNOWN = "unknown"
 
 
@@ -32,6 +31,7 @@ class VarDecl(Stmt):
     type_name: TypeName
     name: str
     initializer: Expr
+    is_constant: bool = False
 
 
 @dataclass(frozen=True)
@@ -95,6 +95,23 @@ class ContinueMarch(Stmt):
 
 
 @dataclass(frozen=True)
+class FuncDecl(Stmt):
+    """Function declaration: decree <return_type> <name> (<type> <param>, ...) { ... }"""
+
+    return_type: TypeName
+    name: str
+    params: list[tuple[TypeName, str]]  # list of (type, name) pairs
+    body: Block
+
+
+@dataclass(frozen=True)
+class Deliver(Stmt):
+    """Return statement: deliver <value>!"""
+
+    value: Expr | None  # None for bare deliver
+
+
+@dataclass(frozen=True)
 class Literal(Expr):
     value: object
 
@@ -116,4 +133,12 @@ class Compare(Expr):
     left: Expr
     op: str  # equals / greater_than / less_than
     right: Expr
+
+
+@dataclass(frozen=True)
+class FuncCall(Expr):
+    """Function call: <name>(<arg1>, <arg2>, ...)"""
+
+    name: str
+    args: list[Expr]
 

@@ -24,7 +24,6 @@ class TokenType(Enum):
     ESSENCE = auto()  # double
     SCROLL = auto()
     OATH = auto()
-    LEDGER = auto()
 
     # Keywords: statements
     RAVEN = auto()
@@ -36,10 +35,11 @@ class TokenType(Enum):
     END = auto()
     FOR_EACH_HOUSE = auto()
     FORGE = auto()
-    DELIVER = auto()
     WHILE_WINTER = auto()
     BREAK_CHAIN = auto()
     CONTINUE_MARCH = auto()
+    DECREE = auto()  # function definition
+    DELIVER = auto()  # return statement
 
     # Comments
     WHISPER = auto()
@@ -64,7 +64,6 @@ KEYWORDS: dict[str, TokenType] = {
     "essence": TokenType.ESSENCE,
     "scroll": TokenType.SCROLL,
     "oath": TokenType.OATH,
-    "ledger": TokenType.LEDGER,
     "raven": TokenType.RAVEN,
     "summon": TokenType.SUMMON,
     "council": TokenType.COUNCIL,
@@ -78,6 +77,8 @@ KEYWORDS: dict[str, TokenType] = {
     "while_winter": TokenType.WHILE_WINTER,
     "break_chain": TokenType.BREAK_CHAIN,
     "continue_march": TokenType.CONTINUE_MARCH,
+    "decree": TokenType.DECREE,
+    "deliver": TokenType.DELIVER,
     "whisper": TokenType.WHISPER,
     "claims": TokenType.CLAIMS,
     "unite": TokenType.UNITE,

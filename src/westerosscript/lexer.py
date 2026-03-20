@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from westerosscript.errors import DiagnosticSink
+from westerosscript.errors import DiagnosticSink, RecoveryStrategy
 from westerosscript.explain import Explainer
 from westerosscript.tokens import KEYWORDS, Token, TokenType
 
@@ -73,6 +73,9 @@ class Lexer:
         if self._is_alpha(c):
             self._identifier()
             return
+        
+        # Panic Mode Recovery: Invalid character detected
+        self._handle_invalid_character(c)
 
     def _identifier(self) -> None:
         while self._peek().isalnum() or self._peek() == "_":
@@ -98,7 +101,6 @@ class Lexer:
             TokenType.ESSENCE,
             TokenType.SCROLL,
             TokenType.OATH,
-            TokenType.LEDGER,
         }:
             self.explainer.say("MAESTER", f"I have discovered the word {text!r}. This represents a DATATYPE in the realm.")
         elif token_type == TokenType.CLAIMS:
@@ -186,6 +188,30 @@ class Lexer:
     def _add(self, type_: TokenType, *, literal: object | None = None) -> None:
         text = self.source[self.start : self.current]
         self.tokens.append(Token(type_, text, literal, self.line, self._col_at(self.start)))
+
+    def _handle_invalid_character(self, char: str) -> None:
+        """Panic Mode Recovery: Report invalid character and emit synthetic UNKNOWN token."""
+        # Try to collect a contiguous sequence of invalid characters for better reporting
+        invalid_sequence = char
+        while not self._is_at_end() and not self._is_valid_start_char(self._peek()):
+            invalid_sequence += self._advance()
+        
+        self.diags.warn(
+            f"The realm does not recognize the character sequence '{invalid_sequence}'. I shall skip it and continue my examination.",
+            filename=self.filename,
+            line=self.line,
+            col=self._col_at(self.start),
+            recovery_strategy=RecoveryStrategy.PANIC_SKIP,
+            recovery_detail=f"Invalid symbols '{invalid_sequence}' discarded"
+        )
+    
+    def _is_valid_start_char(self, c: str) -> bool:
+        """Check if character could start a valid token."""
+        return (
+            c in {" ", "\r", "\t", "\n", "!", "(", ")", "{", "}", '"', "'"}
+            or c.isalnum()
+            or c == "_"
+        )
 
     def _advance(self) -> str:
         c = self.source[self.current]

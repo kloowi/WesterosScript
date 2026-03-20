@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from westerosscript import ast
-from westerosscript.errors import DiagnosticSink
+from westerosscript.errors import DiagnosticSink, RecoveryStrategy
 from westerosscript.explain import Explainer
 from westerosscript.tokens import Token, TokenType
 
@@ -13,6 +13,7 @@ class Parser:
         self.diags = diags
         self.filename = filename
         self.current = 0
+        self.synthetic_tokens: dict[int, Token] = {}  # Track synthetic tokens auto-inserted at each position
 
     def parse_program(self) -> ast.Program:
         self.explainer.section("THE SMALL COUNCIL REVIEWS THE DECREE")
@@ -27,26 +28,25 @@ class Parser:
 
     def _statement(self) -> ast.Stmt | None:
         if self._match(TokenType.SIGIL):
-            # Constant modifier for a declaration. For milestone 1 this behaves like a normal declaration.
+            # Constant modifier for a declaration.
             if not self._match(
                 TokenType.COIN,
                 TokenType.STAG,
                 TokenType.ESSENCE,
                 TokenType.SCROLL,
                 TokenType.OATH,
-                TokenType.LEDGER,
             ):
                 t = self._peek()
                 self.diags.fatal(
                     f"Expected a datatype after 'sigil' keyword, but found {t.lexeme!r}. "
-                    f"Valid types are: coin, stag, essence, scroll, oath, ledger.",
+                    f"Valid types are: coin, stag, essence, scroll, oath.",
                     filename=self.filename,
                     line=t.line,
                     col=t.col
                 )
                 return None
             type_tok = self._previous()
-            decl = self._var_decl(type_tok)
+            decl = self._var_decl(type_tok, is_constant=True)
             return decl
 
         if self._match(
@@ -55,7 +55,6 @@ class Parser:
             TokenType.ESSENCE,
             TokenType.SCROLL,
             TokenType.OATH,
-            TokenType.LEDGER,
         ):
             type_tok = self._previous()
             self.explainer.say("COUNCIL", "Expected royal structure:")
@@ -99,6 +98,20 @@ class Parser:
             self._consume_bang_with_recovery()
             return ast.ContinueMarch()
 
+        if self._match(TokenType.DELIVER):
+            self.explainer.say("COUNCIL", "A raven returns with the treasure from a decree.")
+            value = None
+            if not self._check(TokenType.BANG):
+                value = self._expression()
+            self._consume_bang_with_recovery()
+            return ast.Deliver(value=value)
+
+        if self._match(TokenType.DECREE):
+            self.explainer.say("COUNCIL", "A new decree is proclaimed; a function is born.")
+            stmt = self._func_decl()
+            self.explainer.say("COUNCIL", "✓ The decree is sealed into the fabric of the realm.")
+            return stmt
+
         # Bare block statement: { ... }
         if self._match(TokenType.LBRACE):
             self.explainer.say("COUNCIL", "A scope is opened; the realm narrows its focus.")
@@ -123,26 +136,91 @@ class Parser:
         self.diags.fatal(f"Unexpected token {t.lexeme!r}.", filename=self.filename, line=t.line, col=t.col)
         return None
 
-    def _var_decl(self, type_tok: Token) -> ast.VarDecl:
+    def _var_decl(self, type_tok: Token, is_constant: bool = False) -> ast.VarDecl:
         type_name = _type_from_token(type_tok.type)
         name = self._consume(TokenType.IDENTIFIER, "Expected an identifier after datatype.").lexeme
         self._consume(TokenType.CLAIMS, "Expected 'claims' assignment operator.")
         init = self._expression()
         self._consume_bang_with_recovery()
-        return ast.VarDecl(type_name=type_name, name=name, initializer=init)
+        return ast.VarDecl(type_name=type_name, name=name, initializer=init, is_constant=is_constant)
 
     def _consume_bang_with_recovery(self) -> None:
+        """Phrase-Level Recovery: Auto-insert missing ending rune '!' if not found."""
         if self._match(TokenType.BANG):
             return
-        # If the closing rune is missing, report a fatal syntax error instead of inserting one.
+        
+        # Phrase-Level Recovery: Auto-insert synthetic BANG token
         t = self._peek()
-        self.diags.fatal(
-            f"Expected the sacred ending rune '!' to terminate the statement, but found {t.lexeme!r} instead.",
+        self.diags.warn(
+            f"The sacred ending rune '!' was not found after the statement. I noticed {t.lexeme!r} instead, but I shall insert the missing '!' and continue.",
             filename=self.filename,
             line=t.line,
-            col=t.col
+            col=t.col,
+            recovery_strategy=RecoveryStrategy.AUTO_INSERT,
+            recovery_detail="Missing '!' (closing rune) auto-inserted"
         )
-        raise ParsePanic()
+        
+        # Create synthetic BANG token at current position
+        synthetic_bang = Token(
+            TokenType.BANG,
+            "!",
+            None,
+            t.line,
+            t.col,
+        )
+        self.synthetic_tokens[self.current] = synthetic_bang
+
+    def _consume_rparen_with_recovery(self) -> Token:
+        """Phrase-Level Recovery: Auto-insert missing ')' if not found."""
+        if self._check(TokenType.RPAREN):
+            return self._advance()
+        
+        t = self._peek()
+        self.diags.warn(
+            f"Expected closing parenthesis ')' but found {t.lexeme!r}. I shall insert it and continue.",
+            filename=self.filename,
+            line=t.line,
+            col=t.col,
+            recovery_strategy=RecoveryStrategy.AUTO_INSERT,
+            recovery_detail="Missing ')' auto-inserted"
+        )
+        
+        # Return synthetic token without advancing
+        synthetic_rparen = Token(
+            TokenType.RPAREN,
+            ")",
+            None,
+            t.line,
+            t.col,
+        )
+        self.synthetic_tokens[self.current] = synthetic_rparen
+        return synthetic_rparen
+
+    def _consume_rbrace_with_recovery(self) -> Token:
+        """Phrase-Level Recovery: Auto-insert missing '}' if not found."""
+        if self._check(TokenType.RBRACE):
+            return self._advance()
+        
+        t = self._peek()
+        self.diags.warn(
+            f"Expected closing brace '}}' but found {t.lexeme!r}. I shall insert it and continue.",
+            filename=self.filename,
+            line=t.line,
+            col=t.col,
+            recovery_strategy=RecoveryStrategy.AUTO_INSERT,
+            recovery_detail="Missing '}' auto-inserted"
+        )
+        
+        # Return synthetic token without advancing
+        synthetic_rbrace = Token(
+            TokenType.RBRACE,
+            "}",
+            None,
+            t.line,
+            t.col,
+        )
+        self.synthetic_tokens[self.current] = synthetic_rbrace
+        return synthetic_rbrace
 
     def _expression(self) -> ast.Expr:
         return self._comparison()
@@ -177,10 +255,20 @@ class Parser:
         if self._match(TokenType.STRING):
             return ast.Literal(self._previous().literal)
         if self._match(TokenType.IDENTIFIER):
-            return ast.Identifier(self._previous().lexeme)
+            name = self._previous().lexeme
+            # Check for function call: name(args)
+            if self._match(TokenType.LPAREN):
+                args: list[ast.Expr] = []
+                if not self._check(TokenType.RPAREN):
+                    args.append(self._expression())
+                    while self._match(TokenType.THEN):  # using 'then' as argument separator for now
+                        args.append(self._expression())
+                self._consume_rparen_with_recovery()
+                return ast.FuncCall(name=name, args=args)
+            return ast.Identifier(name)
         if self._match(TokenType.LPAREN):
             expr = self._expression()
-            self._consume(TokenType.RPAREN, "Expected ')' to close grouped expression.")
+            self._consume_rparen_with_recovery()
             return expr
 
         t = self._peek()
@@ -237,6 +325,43 @@ class Parser:
         body = self._curly_block()
         return ast.ForEachHouse(type_name=type_name, name=name, start=start, end=end, body=body)
 
+    def _func_decl(self) -> ast.FuncDecl:
+        # decree <return_type> <name> (<param_type> <param_name>, ...) { <block> }
+        if not self._match(TokenType.COIN, TokenType.STAG, TokenType.ESSENCE, TokenType.SCROLL, TokenType.OATH):
+            t = self._peek()
+            self.diags.fatal(f"Expected return type after 'decree', found {t.lexeme!r}.")
+            raise ParsePanic()
+        return_type = _type_from_token(self._previous().type)
+
+        name = self._consume(TokenType.IDENTIFIER, "Expected function name after return type.").lexeme
+
+        self._consume(TokenType.LPAREN, "Expected '(' after function name.")
+        params: list[tuple[ast.TypeName, str]] = []
+        if not self._check(TokenType.RPAREN):
+            # Parse first parameter
+            if not self._match(TokenType.COIN, TokenType.STAG, TokenType.ESSENCE, TokenType.SCROLL, TokenType.OATH):
+                t = self._peek()
+                self.diags.fatal(f"Expected parameter type, found {t.lexeme!r}.")
+                raise ParsePanic()
+            param_type = _type_from_token(self._previous().type)
+            param_name = self._consume(TokenType.IDENTIFIER, "Expected parameter name.").lexeme
+            params.append((param_type, param_name))
+
+            # Parse additional parameters
+            while self._match(TokenType.THEN):  # using 'then' as parameter separator
+                if not self._match(TokenType.COIN, TokenType.STAG, TokenType.ESSENCE, TokenType.SCROLL, TokenType.OATH):
+                    t = self._peek()
+                    self.diags.fatal(f"Expected parameter type, found {t.lexeme!r}.")
+                    raise ParsePanic()
+                param_type = _type_from_token(self._previous().type)
+                param_name = self._consume(TokenType.IDENTIFIER, "Expected parameter name.").lexeme
+                params.append((param_type, param_name))
+
+        self._consume_rparen_with_recovery()
+        self._consume(TokenType.LBRACE, "Expected '{' after function signature.")
+        body = self._curly_block()
+        return ast.FuncDecl(return_type=return_type, name=name, params=params, body=body)
+
     def _curly_block(self) -> ast.Block:
         # Assumes the opening { has already been consumed
         statements: list[ast.Stmt] = []
@@ -246,7 +371,7 @@ class Parser:
                 statements.append(stmt)
             else:
                 self._synchronize()
-        self._consume(TokenType.RBRACE, "Expected '}' to close block.")
+        self._consume_rbrace_with_recovery()
         return ast.Block(statements=statements)
 
     def _consume(self, token_type: TokenType, message: str) -> Token:
@@ -311,6 +436,6 @@ def _type_from_token(tt: TokenType) -> ast.TypeName:
         TokenType.ESSENCE: ast.TypeName.ESSENCE,
         TokenType.SCROLL: ast.TypeName.SCROLL,
         TokenType.OATH: ast.TypeName.OATH,
-        TokenType.LEDGER: ast.TypeName.LEDGER,
     }.get(tt, ast.TypeName.UNKNOWN)
+
 

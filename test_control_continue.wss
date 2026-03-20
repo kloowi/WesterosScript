@@ -1,6 +1,0 @@
-for_each_house coin i claims 0 then 5 {
-  council i equals 2 {
-    continue_march!
-  }
-  raven i!
-}

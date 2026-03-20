@@ -135,10 +135,6 @@ def _get_width(type_name: TypeName) -> int:
         TypeName.OATH: 1,      # char
         TypeName.ESSENCE: 8,   # double
         TypeName.SCROLL: 8,    # string (pointer size)
-        TypeName.LEDGER: 8,    # ledger (reference)
         TypeName.UNKNOWN: 0,
     }.get(type_name, 0)
-    if isinstance(v, bool):
-        return "true" if v else "false"
-    return str(v)
 

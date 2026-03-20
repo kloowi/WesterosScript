@@ -12,6 +12,7 @@ class SemanticAnalyzer:
         self.explainer = explainer
         self.diags = diags
         self._scope_depth: int = 0  # Track scope depth during analysis (don't modify ledger stack)
+        self._functions: dict[str, ast.FuncDecl] = {}  # Store function definitions for lookup
 
     def _push_scope(self) -> None:
         """Push a new scope level during semantic analysis."""
@@ -164,6 +165,39 @@ class SemanticAnalyzer:
             # Control-flow markers are fine during analysis (runtime semantics not implemented yet).
             return
 
+        if isinstance(stmt, ast.FuncDecl):
+            self.explainer.say("CITADEL", f"A new decree '{stmt.name}' is recorded with {len(stmt.params)} parameters.")
+            # Record function signature
+            param_str = ", ".join(f"{t.value} {n}" for t, n in stmt.params)
+            self.explainer.say("CITADEL", f"Function signature: {stmt.return_type.value} {stmt.name}({param_str})")
+            # Store function for later lookup
+            self._functions[stmt.name] = stmt
+            # Create function scope and analyze body
+            self._push_scope()
+            try:
+                # Add parameters to scope
+                for param_type, param_name in stmt.params:
+                    self.ledger.define(param_name, param_type, None)
+                # Analyze function body
+                self._stmt(stmt.body)
+            finally:
+                self._pop_scope()
+            return
+
+        if isinstance(stmt, ast.Deliver):
+            self.explainer.say("CITADEL", "A raven returns from a decree with treasure.")
+            # In semantic analysis, we just skip evaluating the return value
+            # (at runtime it will be evaluated with parameters bound)
+            if stmt.value is not None and isinstance(stmt.value, ast.Identifier):
+                # Check that the identifier exists in scope
+                sym = self.ledger.get(stmt.value.name)
+                if sym is None:
+                    self.diags.fatal(
+                        f"Undeclared variable {stmt.value.name!r}. The variable must be declared before use.\n\n"
+                        "The Citadel does not recognize this decree."
+                    )
+            return
+
         self.diags.fatal(f"Unsupported statement type: {type(stmt).__name__}")
 
     def _eval(self, expr: ast.Expr) -> tuple[object, ast.TypeName]:
@@ -255,6 +289,19 @@ class SemanticAnalyzer:
             self.diags.fatal(f"Unknown comparison operator {expr.op!r}.")
             return None, ast.TypeName.UNKNOWN
 
+        if isinstance(expr, ast.FuncCall):
+            # Look up function to get return type
+            if expr.name in self._functions:
+                func_decl = self._functions[expr.name]
+                # Evaluate arguments for type checking
+                for arg in expr.args:
+                    self._eval(arg)
+                # Return the function's return type
+                return None, func_decl.return_type
+            else:
+                self.diags.fatal(f"Undeclared function {expr.name!r}.")
+                return None, ast.TypeName.UNKNOWN
+
         self.diags.fatal(f"Unsupported expression type: {type(expr).__name__}")
         return None, ast.TypeName.UNKNOWN
 
@@ -281,8 +328,6 @@ def _is_compatible(target: ast.TypeName, value_type: ast.TypeName, value: object
     if target == ast.TypeName.OATH:
         # OATH (char) accepts single character strings
         return value_type == ast.TypeName.OATH and isinstance(value, str) and len(value) == 1
-    if target == ast.TypeName.LEDGER:
-        return False
     return False
 
 

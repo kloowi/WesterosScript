@@ -10,6 +10,13 @@ class Severity(str, Enum):
     FATAL = "fatal"
 
 
+class RecoveryStrategy(str, Enum):
+    """Error recovery strategies employed by the lexer/parser."""
+    NONE = "none"                  # No recovery attempted
+    AUTO_INSERT = "auto_insert"    # Delimiter was auto-inserted to allow parsing to continue
+    PANIC_SKIP = "panic_skip"      # Invalid token was skipped to resume parsing
+
+
 @dataclass(frozen=True)
 class Diagnostic:
     severity: Severity
@@ -17,6 +24,8 @@ class Diagnostic:
     filename: str | None = None
     line: int | None = None
     col: int | None = None
+    recovery_strategy: RecoveryStrategy = RecoveryStrategy.NONE
+    recovery_detail: str | None = None  # What was inserted/skipped (e.g., "missing '!'", "invalid '@#$'")
 
     def format(self) -> str:
         loc = ""
@@ -28,7 +37,13 @@ class Diagnostic:
             Severity.WARNING: "[MAESTER WARNING]",
             Severity.FATAL: "[FATAL BETRAYAL]",
         }[self.severity]
-        return f"{prefix}\n\n{loc}{self.message}\n"
+        formatted = f"{prefix}\n\n{loc}{self.message}\n"
+        
+        # Append recovery detail if present
+        if self.recovery_strategy != RecoveryStrategy.NONE and self.recovery_detail:
+            formatted += f"[Recovery: {self.recovery_strategy.value.upper()}] {self.recovery_detail}\n"
+        
+        return formatted
 
 
 @dataclass
@@ -38,15 +53,87 @@ class DiagnosticSink:
     @property
     def has_fatal(self) -> bool:
         return any(d.severity == Severity.FATAL for d in self.diags)
+    
+    @property
+    def recovery_count(self) -> int:
+        """Count diagnostics that used recovery strategies."""
+        return sum(1 for d in self.diags if d.recovery_strategy != RecoveryStrategy.NONE)
+    
+    @property
+    def auto_insert_count(self) -> int:
+        """Count AUTO_INSERT recovery strategy uses."""
+        return sum(1 for d in self.diags if d.recovery_strategy == RecoveryStrategy.AUTO_INSERT)
+    
+    @property
+    def panic_skip_count(self) -> int:
+        """Count PANIC_SKIP recovery strategy uses."""
+        return sum(1 for d in self.diags if d.recovery_strategy == RecoveryStrategy.PANIC_SKIP)
 
-    def info(self, message: str, *, filename: str | None = None, line: int | None = None, col: int | None = None) -> None:
-        self.diags.append(Diagnostic(Severity.INFO, message, filename, line, col))
+    def info(
+        self, 
+        message: str, 
+        *, 
+        filename: str | None = None, 
+        line: int | None = None, 
+        col: int | None = None,
+        recovery_strategy: RecoveryStrategy = RecoveryStrategy.NONE,
+        recovery_detail: str | None = None
+    ) -> None:
+        self.diags.append(
+            Diagnostic(
+                Severity.INFO, 
+                message, 
+                filename, 
+                line, 
+                col,
+                recovery_strategy=recovery_strategy,
+                recovery_detail=recovery_detail
+            )
+        )
 
-    def warn(self, message: str, *, filename: str | None = None, line: int | None = None, col: int | None = None) -> None:
-        self.diags.append(Diagnostic(Severity.WARNING, message, filename, line, col))
+    def warn(
+        self, 
+        message: str, 
+        *, 
+        filename: str | None = None, 
+        line: int | None = None, 
+        col: int | None = None,
+        recovery_strategy: RecoveryStrategy = RecoveryStrategy.NONE,
+        recovery_detail: str | None = None
+    ) -> None:
+        self.diags.append(
+            Diagnostic(
+                Severity.WARNING, 
+                message, 
+                filename, 
+                line, 
+                col,
+                recovery_strategy=recovery_strategy,
+                recovery_detail=recovery_detail
+            )
+        )
 
-    def fatal(self, message: str, *, filename: str | None = None, line: int | None = None, col: int | None = None) -> None:
-        self.diags.append(Diagnostic(Severity.FATAL, message, filename, line, col))
+    def fatal(
+        self, 
+        message: str, 
+        *, 
+        filename: str | None = None, 
+        line: int | None = None, 
+        col: int | None = None,
+        recovery_strategy: RecoveryStrategy = RecoveryStrategy.NONE,
+        recovery_detail: str | None = None
+    ) -> None:
+        self.diags.append(
+            Diagnostic(
+                Severity.FATAL, 
+                message, 
+                filename, 
+                line, 
+                col,
+                recovery_strategy=recovery_strategy,
+                recovery_detail=recovery_detail
+            )
+        )
 
     def print(self) -> None:
         if not self.diags:

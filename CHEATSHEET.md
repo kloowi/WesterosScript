@@ -1,6 +1,5 @@
 VARIABLES & CONSTANTS
 sigil - constant
-ledger - array
 claims - assignment 
 
 DATA TYPES
@@ -35,7 +34,7 @@ greater_than >
 less_than <
 
 FUNCTION
-dec
+decree - define function
 
 COMMENTS
 whisper single-line

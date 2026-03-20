@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
+import json
+from dataclasses import asdict, dataclass, fields, is_dataclass
 
 from westerosscript.explain import NarrationLevel
 from westerosscript.compiler import analyze_source
@@ -13,6 +14,7 @@ class AnalyzeUiResult:
     diagnostics: str
     ledger: str
     runtime: str
+    ast: str
 
 
 class WesterosApi:
@@ -37,8 +39,30 @@ class WesterosApi:
                 diagnostics=diags,
                 ledger=res.ledger_text or "",
                 runtime=res.runtime_output or "",
+                ast=_ast_to_json(res.program),
             )
         )
+
+
+def _ast_to_json(program: object | None) -> str:
+    if program is None:
+        return ""
+    return json.dumps(_ast_node_to_dict(program), indent=2)
+
+
+def _ast_node_to_dict(value: object) -> object:
+    if is_dataclass(value):
+        payload = {"type": value.__class__.__name__}
+        for f in fields(value):
+            payload[f.name] = _ast_node_to_dict(getattr(value, f.name))
+        return payload
+    if isinstance(value, list):
+        return [_ast_node_to_dict(item) for item in value]
+    if isinstance(value, tuple):
+        return [_ast_node_to_dict(item) for item in value]
+    if isinstance(value, dict):
+        return {str(k): _ast_node_to_dict(v) for k, v in value.items()}
+    return value
 
 
 def _extract_diagnostics(text: str) -> str:
