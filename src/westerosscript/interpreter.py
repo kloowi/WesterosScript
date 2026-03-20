@@ -17,16 +17,24 @@ class _LoopContinue(Exception):
 @dataclass
 class RuntimeResult:
     outputs: list[str] = field(default_factory=list)
+    errors: list[str] = field(default_factory=list)
 
     def to_text(self) -> str:
-        if not self.outputs:
+        if not self.outputs and not self.errors:
             return ""
-        return "\n".join(self.outputs) + "\n"
+        lines = []
+        lines.extend(self.outputs)
+        if self.errors:
+            lines.append("")
+            for err in self.errors:
+                lines.append(f"[Runtime Error] {err}")
+        return "\n".join(lines) + "\n"
 
 
 class Interpreter:
     def __init__(self, *, ledger: GreatLedger) -> None:
         self.ledger = ledger
+        self.has_runtime_error = False
 
     def run(self, program: ast.Program) -> RuntimeResult:
         res = RuntimeResult()
@@ -34,9 +42,9 @@ class Interpreter:
             try:
                 self._stmt(stmt, res)
             except _LoopBreak:
-                res.outputs.append("[Runtime] break_chain used outside of a loop.")
+                res.errors.append("break_chain used outside of a loop.")
             except _LoopContinue:
-                res.outputs.append("[Runtime] continue_march used outside of a loop.")
+                res.errors.append("continue_march used outside of a loop.")
         return res
 
     def _stmt(self, stmt: ast.Stmt, res: RuntimeResult) -> None:
@@ -77,7 +85,11 @@ class Interpreter:
 
         if isinstance(stmt, ast.Raven):
             value = self._eval(stmt.value)
-            res.outputs.append(f"[Output] {value}")
+            if self.has_runtime_error:
+                res.errors.append("Cannot output result due to division by zero error.")
+                self.has_runtime_error = False  # Reset error flag
+            else:
+                res.outputs.append(f"[Output] {value}")
             return
 
         if isinstance(stmt, ast.Block):
@@ -174,6 +186,10 @@ class Interpreter:
             if expr.op == "forge":
                 return a * b
             if expr.op == "divide_realm":
+                # Check for division by zero
+                if b == 0:
+                    self.has_runtime_error = True
+                    return None  # Return None to signal error
                 return a / b
             return None
 

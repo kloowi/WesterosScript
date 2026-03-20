@@ -1,0 +1,6 @@
+coin x claims 10!
+coin y claims 0!
+{
+  coin result claims x divide_realm y!
+  raven result!
+}

@@ -214,6 +214,9 @@ class SemanticAnalyzer:
             elif expr.op == "forge":
                 out = a * b
             elif expr.op == "divide_realm":
+                if b == 0:
+                    self.diags.fatal("Division by zero: cannot divide by zero.")
+                    return None, ast.TypeName.UNKNOWN
                 out = a / b
                 as_float = True
             else:
