@@ -154,8 +154,8 @@
         transform: translateY(1px);
       }
       .ast-handle {
-        width: 34px;
-        height: 34px;
+        width: 38px;
+        height: 38px;
         border-radius: 9999px;
         border: 1px solid rgba(255, 217, 0, 0.35);
         background: radial-gradient(circle at 30% 30%, rgba(255, 217, 0, 0.3), rgba(255, 217, 0, 0.08));
@@ -177,6 +177,12 @@
       .ast-panel {
         border: 1px solid rgba(255, 217, 0, 0.2);
         background: rgba(0, 0, 0, 0.38);
+      }
+      .ast-panel-maximized {
+        width: 300px;
+        height: 580px;
+        top: 0;
+        left: -336px;
       }
       .ast-tree {
         font-family: "JetBrains Mono", monospace;
@@ -263,6 +269,36 @@
     </style>
   </head>
   <body class="font-display text-slate-100 antialiased selection:bg-primary/30 p-4">
+    <div class="relative w-full max-w-2xl h-[580px]">
+      <button
+        id="astHandle"
+        class="ast-handle btn absolute -left-12 top-0 flex items-center justify-center z-20"
+        title="Show AST panel"
+        type="button"
+      >
+        <span class="material-symbols-outlined text-[16px] leading-none">account_tree</span>
+      </button>
+
+      <div
+        id="astPanel"
+        class="ast-panel ast-panel-maximized hidden absolute flex flex-col rounded-lg overflow-hidden"
+      >
+        <div class="flex items-center justify-between px-3 py-2 border-b border-primary/20 bg-primary/5">
+          <span class="text-[10px] font-bold tracking-[0.14em] uppercase text-primary/80">Abstract Syntax Tree</span>
+          <button
+            id="astMinimizeBtn"
+            class="btn text-slate-400 hover:text-primary transition-colors"
+            title="Minimize AST panel"
+            type="button"
+          >
+            <span class="material-symbols-outlined text-sm">remove</span>
+          </button>
+        </div>
+        <div class="flex-1 overflow-auto custom-scrollbar p-3">
+          <pre id="astContent" class="ast-tree text-slate-400">(ast hidden)</pre>
+        </div>
+      </div>
+
     <div
       class="w-full max-w-2xl h-[580px] flex flex-col rounded-2xl glass-effect shadow-[0_0_40px_rgba(255,217,0,0.18),inset_0_0_26px_rgba(255,217,0,0.06)] overflow-hidden"
     >
@@ -293,33 +329,7 @@
 
       <div class="flex-1 flex flex-col overflow-hidden">
         <div class="flex-1 overflow-hidden p-6">
-          <div class="h-72 flex gap-3">
-            <button
-              id="astHandle"
-              class="ast-handle btn mt-1 flex items-center justify-center shrink-0"
-              title="Show AST panel"
-              type="button"
-            >
-              <span class="material-symbols-outlined text-[16px] leading-none">account_tree</span>
-            </button>
-
-            <div id="astPanel" class="ast-panel hidden w-[250px] rounded-lg overflow-hidden flex-col shrink-0">
-              <div class="flex items-center justify-between px-3 py-2 border-b border-primary/20 bg-primary/5">
-                <span class="text-[10px] font-bold tracking-[0.14em] uppercase text-primary/80">Abstract Syntax Tree</span>
-                <button
-                  id="astMinimizeBtn"
-                  class="btn text-slate-400 hover:text-primary transition-colors"
-                  title="Minimize AST panel"
-                  type="button"
-                >
-                  <span class="material-symbols-outlined text-sm">remove</span>
-                </button>
-              </div>
-              <div class="flex-1 overflow-auto custom-scrollbar p-3">
-                <pre id="astContent" class="ast-tree text-slate-400">(ast hidden)</pre>
-              </div>
-            </div>
-
+          <div class="h-72">
             <div class="focus-ring flex-1 overflow-hidden rounded-lg border border-primary/20 bg-black/30">
               <div class="flex font-mono text-sm">
                 <div id="lineNums" class="line-nums pt-[1.3rem] pb-4 pl-4 pr-5"></div>
@@ -357,6 +367,7 @@ raven gold!
           </div>
         </div>
       </div>
+    </div>
     </div>
 
     <!-- Cheatsheet Modal -->
@@ -624,6 +635,7 @@ raven gold!
       }
 
       function showAstPanel() {
+        astHandle.classList.add("hidden");
         astPanel.classList.remove("hidden");
         astHandle.classList.add("ast-handle-active");
         renderAst();
@@ -631,6 +643,7 @@ raven gold!
 
       function hideAstPanel() {
         astPanel.classList.add("hidden");
+        astHandle.classList.remove("hidden");
         astHandle.classList.remove("ast-handle-active");
       }
 
