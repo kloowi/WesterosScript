@@ -51,6 +51,18 @@
       .custom-scrollbar::-webkit-scrollbar {
         width: 4px;
       }
+
+      /* Hide scrollbar visuals globally while preserving scroll behavior. */
+      * {
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+      }
+
+      *::-webkit-scrollbar {
+        width: 0;
+        height: 0;
+        display: none;
+      }
       .custom-scrollbar::-webkit-scrollbar-track {
         background: transparent;
       }
@@ -71,8 +83,6 @@
           url("APP-background.png");
         background-size: auto, auto, auto, cover;
         background-position: center, center, center, center;
-        background-repeat: no-repeat, no-repeat, no-repeat, no-repeat;
-        background-color: #0c0b05;
       }
       textarea {
         appearance: none;
@@ -95,15 +105,15 @@
       #editor {
         z-index: 2;
         overscroll-behavior: contain;
-        scrollbar-gutter: stable;
-        scrollbar-width: thin;
-        scrollbar-color: rgba(255, 217, 0, 0.5) transparent;
+        scrollbar-width: none;
         overflow-y: auto;
         overflow-x: auto;
       }
+
       #editor::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
+        width: 0;
+        height: 0;
+        display: none;
       }
       #editor::-webkit-scrollbar-track {
         background: transparent;
@@ -152,44 +162,6 @@
       }
       .btn:active {
         transform: translateY(1px);
-      }
-      .ast-handle {
-        width: 38px;
-        height: 38px;
-        border-radius: 9999px;
-        border: 1px solid rgba(255, 217, 0, 0.35);
-        background: radial-gradient(circle at 30% 30%, rgba(255, 217, 0, 0.3), rgba(255, 217, 0, 0.08));
-        color: rgba(255, 217, 0, 0.9);
-        box-shadow: inset 0 0 10px rgba(255, 217, 0, 0.12);
-        transition: transform 120ms ease, box-shadow 120ms ease, border-color 120ms ease;
-      }
-      .ast-handle:hover {
-        border-color: rgba(255, 217, 0, 0.6);
-        box-shadow: 0 0 14px rgba(255, 217, 0, 0.3), inset 0 0 10px rgba(255, 217, 0, 0.2);
-      }
-      .ast-handle:active {
-        transform: translateY(1px);
-      }
-      .ast-handle-active {
-        border-color: rgba(255, 217, 0, 0.75);
-        box-shadow: 0 0 18px rgba(255, 217, 0, 0.36), inset 0 0 12px rgba(255, 217, 0, 0.24);
-      }
-      .ast-panel {
-        border: 1px solid rgba(255, 217, 0, 0.2);
-        background: rgba(0, 0, 0, 0.38);
-      }
-      .ast-panel-maximized {
-        width: 300px;
-        height: 340px;
-        top: 0;
-        left: -336px;
-      }
-      .ast-tree {
-        font-family: "JetBrains Mono", monospace;
-        font-size: 11px;
-        line-height: 1.45;
-        color: rgba(226, 232, 240, 0.9);
-        white-space: pre;
       }
       pre {
         white-space: pre-wrap;
@@ -280,8 +252,92 @@
         background: rgba(255, 217, 0, 0.35);
         border-radius: 999px;
       }
-      .cheat-panel {
-        background: linear-gradient(180deg, rgba(20, 16, 7, 0.82) 0%, rgba(12, 10, 5, 0.78) 100%);
+      .cheat-float {
+        box-shadow: inset 0 0 0 1px rgba(255, 217, 0, 0.08), 0 12px 24px rgba(0, 0, 0, 0.22);
+        background:
+          radial-gradient(120% 70% at 12% 4%, rgba(255, 217, 0, 0.08), rgba(255, 217, 0, 0) 58%),
+          linear-gradient(180deg, rgba(8, 7, 4, 0.58) 0%, rgba(8, 7, 4, 0.3) 100%);
+        letter-spacing: 0.01em;
+      }
+      .cheat-grid {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 24px minmax(0, 0.9fr);
+        gap: 0.24rem;
+        align-items: baseline;
+      }
+      .cheat-group {
+        --cheat-accent: rgba(255, 217, 0, 0.85);
+        border-top: 1px solid color-mix(in srgb, var(--cheat-accent) 24%, transparent);
+        border-left: 2px solid color-mix(in srgb, var(--cheat-accent) 42%, transparent);
+        border-radius: 0.45rem;
+        padding: 0.65rem 0.6rem 0.25rem 0.7rem;
+        background: linear-gradient(92deg, color-mix(in srgb, var(--cheat-accent) 14%, transparent) 0%, transparent 60%);
+        padding-top: 0.9rem;
+      }
+      .cheat-group:first-child {
+        border-top: none;
+        padding-top: 0;
+      }
+      .cheat-group-types {
+        --cheat-accent: rgba(255, 217, 0, 0.9);
+      }
+      .cheat-group-declare {
+        --cheat-accent: rgba(251, 191, 36, 0.86);
+      }
+      .cheat-group-io {
+        --cheat-accent: rgba(52, 211, 153, 0.82);
+      }
+      .cheat-group-control {
+        --cheat-accent: rgba(125, 211, 252, 0.84);
+      }
+      .cheat-group-ops {
+        --cheat-accent: rgba(251, 146, 60, 0.84);
+      }
+      .cheat-group-other {
+        --cheat-accent: rgba(196, 181, 253, 0.82);
+      }
+      .cheat-title {
+        color: color-mix(in srgb, var(--cheat-accent) 88%, white 8%);
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        margin-bottom: 0.6rem;
+      }
+      .cheat-row {
+        padding: 0.22rem 0.2rem;
+        border-radius: 0.35rem;
+        transition: background-color 120ms ease;
+      }
+      .cheat-row:hover {
+        background: color-mix(in srgb, var(--cheat-accent) 13%, transparent);
+      }
+      .cheat-k {
+        color: color-mix(in srgb, var(--cheat-accent) 86%, white 6%);
+        font-weight: 700;
+        font-size: 11px;
+      }
+      .cheat-arrow {
+        color: color-mix(in srgb, var(--cheat-accent) 36%, rgba(148, 163, 184, 0.72));
+        text-align: center;
+        font-size: 10px;
+        transform: translateX(8px);
+      }
+      .cheat-v {
+        color: rgba(226, 232, 240, 0.78);
+        text-align: left;
+        font-size: 11px;
+        transform: translateX(4px);
+      }
+      .cheat-op {
+        color: rgba(226, 232, 240, 0.88);
+      }
+
+      @media (max-width: 1100px) {
+        .cheat-grid {
+          grid-template-columns: minmax(0, 1fr) 20px minmax(0, 0.9fr);
+          gap: 0.2rem;
+        }
       }
     </style>
   </head>
@@ -289,39 +345,10 @@
     <div class="w-full max-w-6xl mx-auto flex flex-col lg:flex-row lg:items-start gap-6">
       <div class="relative w-full max-w-[780px] flex flex-col gap-6 lg:flex-none">
         <div class="relative">
-        <button
-          id="astHandle"
-          class="ast-handle btn absolute -left-12 top-0 flex items-center justify-center z-20"
-          title="Show AST panel"
-          type="button"
-        >
-          <span class="material-symbols-outlined text-[16px] leading-none">account_tree</span>
-        </button>
-
-        <div
-          id="astPanel"
-          class="ast-panel ast-panel-maximized hidden absolute flex flex-col rounded-lg overflow-hidden"
-        >
-          <div class="flex items-center justify-between px-3 py-2 border-b border-primary/20 bg-primary/5">
-            <span class="text-[10px] font-bold tracking-[0.14em] uppercase text-primary/80">Abstract Syntax Tree</span>
-            <button
-              id="astMinimizeBtn"
-              class="btn text-slate-400 hover:text-primary transition-colors"
-              title="Minimize AST panel"
-              type="button"
-            >
-              <span class="material-symbols-outlined text-sm">remove</span>
-            </button>
-          </div>
-          <div class="flex-1 overflow-auto custom-scrollbar p-3">
-            <pre id="astContent" class="ast-tree text-slate-400">(ast hidden)</pre>
-          </div>
-        </div>
-
         <div
           class="w-full h-[330px] flex flex-col rounded-2xl glass-effect shadow-[0_0_40px_rgba(255,217,0,0.18),inset_0_0_26px_rgba(255,217,0,0.06)] overflow-hidden"
         >
-          <div class="flex items-center justify-between px-5 py-3 bg-primary/5 border-b border-primary/20">
+          <div class="h-[52px] flex items-center justify-between px-5 bg-primary/5 border-b border-primary/20">
             <div class="flex items-center gap-2">
               <span class="material-symbols-outlined text-primary text-sm">auto_fix_high</span>
               <span class="text-[10px] font-bold tracking-[0.2em] text-primary/70 uppercase">Westeros Compiler</span>
@@ -384,54 +411,65 @@ raven gold!
       </div>
       </div>
 
-      <aside class="w-full lg:w-[300px] lg:h-[680px] rounded-2xl glass-effect cheat-panel shadow-[0_0_36px_rgba(255,217,0,0.14),inset_0_0_20px_rgba(255,217,0,0.05)] overflow-hidden">
+      <aside class="w-full lg:w-[300px] lg:h-[680px] rounded-2xl glass-effect shadow-[0_0_40px_rgba(255,217,0,0.16),inset_0_0_24px_rgba(255,217,0,0.06)] overflow-hidden">
         <div class="h-full flex flex-col">
-          <div class="px-4 py-3 border-b border-primary/20 bg-primary/5">
+          <div class="h-[52px] flex items-center px-5 border-b border-primary/20 bg-primary/5">
             <div class="flex items-center gap-2">
-              <span class="material-symbols-outlined text-primary text-sm">menu_book</span>
+              <span class="material-symbols-outlined text-primary text-sm leading-none">menu_book</span>
               <span class="text-[10px] font-bold tracking-[0.2em] text-primary/80 uppercase">Cheat Sheet</span>
             </div>
           </div>
-          <div class="flex-1 overflow-y-auto custom-scrollbar p-4 text-[11px] leading-6 text-slate-300 font-mono space-y-3">
-            <div>
-              <div class="text-primary/90 font-bold tracking-wider uppercase text-[10px] mb-1">Data Types</div>
-              <div><span class="text-primary font-bold">coin</span> -> int</div>
-              <div><span class="text-primary font-bold">stag</span> -> float</div>
-              <div><span class="text-primary font-bold">essence</span> -> double</div>
-              <div><span class="text-primary font-bold">scroll</span> -> string</div>
-              <div><span class="text-primary font-bold">oath</span> -> char</div>
-            </div>
-            <div class="border-t border-primary/10 pt-3">
-              <div class="text-primary/90 font-bold tracking-wider uppercase text-[10px] mb-1">Declarations</div>
-              <div><span class="text-primary font-bold">sigil</span> -> constant</div>
-              <div><span class="text-primary font-bold">claims</span> -> assignment</div>
-            </div>
-            <div class="border-t border-primary/10 pt-3">
-              <div class="text-primary/90 font-bold tracking-wider uppercase text-[10px] mb-1">Input / Output</div>
-              <div><span class="text-primary font-bold">summon</span> -> input</div>
-              <div><span class="text-primary font-bold">raven</span> -> output</div>
-            </div>
-            <div class="border-t border-primary/10 pt-3">
-              <div class="text-primary/90 font-bold tracking-wider uppercase text-[10px] mb-1">Control Flow</div>
-              <div><span class="text-primary font-bold">council</span> -> if</div>
-              <div><span class="text-primary font-bold">another_path</span> -> else if</div>
-              <div><span class="text-primary font-bold">otherwise</span> -> else</div>
-              <div><span class="text-primary font-bold">for_each_house</span> -> for</div>
-              <div><span class="text-primary font-bold">while_winter</span> -> while</div>
-            </div>
-            <div class="border-t border-primary/10 pt-3">
-              <div class="text-primary/90 font-bold tracking-wider uppercase text-[10px] mb-1">Operators</div>
-              <div><span class="text-primary font-bold">unite</span> + <span class="text-primary font-bold">clash</span> -</div>
-              <div><span class="text-primary font-bold">forge</span> * <span class="text-primary font-bold">divide_realm</span> /</div>
-              <div><span class="text-primary font-bold">equals</span> == <span class="text-primary font-bold">greater_than</span> ></div>
-              <div><span class="text-primary font-bold">less_than</span> &lt;</div>
-            </div>
-            <div class="border-t border-primary/10 pt-3">
-              <div class="text-primary/90 font-bold tracking-wider uppercase text-[10px] mb-1">Other</div>
-              <div><span class="text-primary font-bold">deliver</span> -> return</div>
-              <div><span class="text-primary font-bold">break_chain</span> -> break</div>
-              <div><span class="text-primary font-bold">continue_march</span> -> continue</div>
-              <div><span class="text-primary font-bold">whisper</span> -> comment</div>
+
+          <div class="flex-1 p-6 overflow-hidden">
+            <div class="cheat-float h-full rounded-lg border border-primary/20 overflow-y-auto custom-scrollbar p-4 font-mono space-y-4">
+              <div class="cheat-group cheat-group-types">
+                <div class="cheat-title">Data Types</div>
+                <div class="cheat-grid cheat-row"><span class="cheat-k">coin</span><span class="cheat-arrow">-&gt;</span><span class="cheat-v">int</span></div>
+                <div class="cheat-grid cheat-row"><span class="cheat-k">stag</span><span class="cheat-arrow">-&gt;</span><span class="cheat-v">float</span></div>
+                <div class="cheat-grid cheat-row"><span class="cheat-k">essence</span><span class="cheat-arrow">-&gt;</span><span class="cheat-v">double</span></div>
+                <div class="cheat-grid cheat-row"><span class="cheat-k">scroll</span><span class="cheat-arrow">-&gt;</span><span class="cheat-v">string</span></div>
+                <div class="cheat-grid cheat-row"><span class="cheat-k">oath</span><span class="cheat-arrow">-&gt;</span><span class="cheat-v">char</span></div>
+              </div>
+
+              <div class="cheat-group cheat-group-declare">
+                <div class="cheat-title">Declarations</div>
+                <div class="cheat-grid cheat-row"><span class="cheat-k">sigil</span><span class="cheat-arrow">-&gt;</span><span class="cheat-v">constant</span></div>
+                <div class="cheat-grid cheat-row"><span class="cheat-k">claims</span><span class="cheat-arrow">-&gt;</span><span class="cheat-v">assignment</span></div>
+              </div>
+
+              <div class="cheat-group cheat-group-io">
+                <div class="cheat-title">Input / Output</div>
+                <div class="cheat-grid cheat-row"><span class="cheat-k">summon</span><span class="cheat-arrow">-&gt;</span><span class="cheat-v">input</span></div>
+                <div class="cheat-grid cheat-row"><span class="cheat-k">raven</span><span class="cheat-arrow">-&gt;</span><span class="cheat-v">output</span></div>
+              </div>
+
+              <div class="cheat-group cheat-group-control">
+                <div class="cheat-title">Control Flow</div>
+                <div class="cheat-grid cheat-row"><span class="cheat-k">council</span><span class="cheat-arrow">-&gt;</span><span class="cheat-v">if</span></div>
+                <div class="cheat-grid cheat-row"><span class="cheat-k">another_path</span><span class="cheat-arrow">-&gt;</span><span class="cheat-v">else if</span></div>
+                <div class="cheat-grid cheat-row"><span class="cheat-k">otherwise</span><span class="cheat-arrow">-&gt;</span><span class="cheat-v">else</span></div>
+                <div class="cheat-grid cheat-row"><span class="cheat-k">for_each_house</span><span class="cheat-arrow">-&gt;</span><span class="cheat-v">for</span></div>
+                <div class="cheat-grid cheat-row"><span class="cheat-k">while_winter</span><span class="cheat-arrow">-&gt;</span><span class="cheat-v">while</span></div>
+              </div>
+
+              <div class="cheat-group cheat-group-ops">
+                <div class="cheat-title">Operators</div>
+                <div class="cheat-grid cheat-row"><span class="cheat-k">unite</span><span class="cheat-arrow">-&gt;</span><span class="cheat-v cheat-op">+</span></div>
+                <div class="cheat-grid cheat-row"><span class="cheat-k">clash</span><span class="cheat-arrow">-&gt;</span><span class="cheat-v cheat-op">-</span></div>
+                <div class="cheat-grid cheat-row"><span class="cheat-k">forge</span><span class="cheat-arrow">-&gt;</span><span class="cheat-v cheat-op">*</span></div>
+                <div class="cheat-grid cheat-row"><span class="cheat-k">divide_realm</span><span class="cheat-arrow">-&gt;</span><span class="cheat-v cheat-op">/</span></div>
+                <div class="cheat-grid cheat-row"><span class="cheat-k">equals</span><span class="cheat-arrow">-&gt;</span><span class="cheat-v cheat-op">==</span></div>
+                <div class="cheat-grid cheat-row"><span class="cheat-k">greater_than</span><span class="cheat-arrow">-&gt;</span><span class="cheat-v cheat-op">&gt;</span></div>
+                <div class="cheat-grid cheat-row"><span class="cheat-k">less_than</span><span class="cheat-arrow">-&gt;</span><span class="cheat-v cheat-op">&lt;</span></div>
+              </div>
+
+              <div class="cheat-group cheat-group-other">
+                <div class="cheat-title">Other</div>
+                <div class="cheat-grid cheat-row"><span class="cheat-k">deliver</span><span class="cheat-arrow">-&gt;</span><span class="cheat-v">return</span></div>
+                <div class="cheat-grid cheat-row"><span class="cheat-k">break_chain</span><span class="cheat-arrow">-&gt;</span><span class="cheat-v">break</span></div>
+                <div class="cheat-grid cheat-row"><span class="cheat-k">continue_march</span><span class="cheat-arrow">-&gt;</span><span class="cheat-v">continue</span></div>
+                <div class="cheat-grid cheat-row"><span class="cheat-k">whisper</span><span class="cheat-arrow">-&gt;</span><span class="cheat-v">comment</span></div>
+              </div>
             </div>
           </div>
         </div>
@@ -444,15 +482,11 @@ raven gold!
       const output = document.getElementById("output");
       const overlay = document.getElementById("overlay");
       const lineNums = document.getElementById("lineNums");
-      const astHandle = document.getElementById("astHandle");
-      const astPanel = document.getElementById("astPanel");
-      const astContent = document.getElementById("astContent");
-      const astMinimizeBtn = document.getElementById("astMinimizeBtn");
       const tabAnalysis = document.getElementById("tabAnalysis");
       const tabOutput = document.getElementById("tabOutput");
       const tabLedger = document.getElementById("tabLedger");
 
-      let lastResult = { output: "(ready)", diagnostics: "", ledger: "", runtime: "", ast: "" };
+      let lastResult = { output: "(ready)", diagnostics: "", ledger: "", runtime: "" };
       let activeTab = "analysis";
 
       function escapeHtml(s) {
@@ -671,32 +705,6 @@ raven gold!
         else output.innerHTML = formatTerminal(lastResult.ledger || "(empty)");
       }
 
-      function renderAst() {
-        if (!lastResult.ast) {
-          astContent.textContent = "(no AST available yet)";
-          return;
-        }
-        try {
-          const parsed = JSON.parse(lastResult.ast);
-          astContent.textContent = JSON.stringify(parsed, null, 2);
-        } catch {
-          astContent.textContent = String(lastResult.ast);
-        }
-      }
-
-      function showAstPanel() {
-        astHandle.classList.add("hidden");
-        astPanel.classList.remove("hidden");
-        astHandle.classList.add("ast-handle-active");
-        renderAst();
-      }
-
-      function hideAstPanel() {
-        astPanel.classList.add("hidden");
-        astHandle.classList.remove("hidden");
-        astHandle.classList.remove("ast-handle-active");
-      }
-
       async function requestAnalysis() {
         if (!window.pywebview || !window.pywebview.api) {
           throw new Error("pywebview API not available yet. Please wait...");
@@ -707,7 +715,6 @@ raven gold!
           diagnostics: res.diagnostics || "",
           ledger: res.ledger || "",
           runtime: res.runtime || "",
-          ast: res.ast || "",
         };
       }
 
@@ -718,7 +725,6 @@ raven gold!
         try {
           await requestAnalysis();
           setTab(activeTab);
-          if (!astPanel.classList.contains("hidden")) renderAst();
         } catch (e) {
           output.innerHTML = formatTerminal(String(e));
         } finally {
@@ -727,24 +733,7 @@ raven gold!
         }
       }
 
-      async function openAstPanelAndRefresh() {
-        astHandle.disabled = true;
-        showAstPanel();
-        astContent.textContent = "Forging syntax tree...";
-        try {
-          await requestAnalysis();
-          renderAst();
-          setTab(activeTab);
-        } catch (e) {
-          astContent.textContent = `Unable to load AST:\n${String(e)}`;
-        } finally {
-          astHandle.disabled = false;
-        }
-      }
-
       analyzeBtn.addEventListener("click", analyze);
-      astHandle.addEventListener("click", openAstPanelAndRefresh);
-      astMinimizeBtn.addEventListener("click", hideAstPanel);
       tabAnalysis.addEventListener("click", () => setTab("analysis"));
       tabOutput.addEventListener("click", () => setTab("output"));
       tabLedger.addEventListener("click", () => setTab("ledger"));
@@ -759,7 +748,6 @@ raven gold!
         editor.style.background = "transparent";
         editor.style.color = "transparent";
         editor.style.caretColor = "#ffd900";
-        hideAstPanel();
         syncOverlay();
         syncScroll();
         setTab("analysis");
