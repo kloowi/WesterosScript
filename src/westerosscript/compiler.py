@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import io
 from contextlib import redirect_stdout
 
 from westerosscript import ast
-from westerosscript.errors import DiagnosticSink
+from westerosscript.errors import Diagnostic, DiagnosticSink, Severity
 from westerosscript.explain import Explainer, NarrationLevel
 from westerosscript.lexer import Lexer
 from westerosscript.parser import Parser, ParsePanic
@@ -22,6 +22,12 @@ class AnalyzeResult:
     ledger_text: str | None = None
     runtime_output: str | None = None
     program: ast.Program | None = None
+    token_count: int = 0
+    statement_count: int = 0
+    lexical_ok: bool = False
+    syntax_ok: bool = False
+    semantic_ok: bool = False
+    diagnostics: list[Diagnostic] = field(default_factory=list)
 
 
 def analyze_source(
@@ -37,12 +43,20 @@ def analyze_source(
 ) -> AnalyzeResult:
     buf = io.StringIO() if capture_output else None
     runtime_out: str | None = None
+    token_count = 0
+    statement_count = 0
+    lexical_ok = False
+    syntax_ok = False
+    semantic_ok = False
     with redirect_stdout(buf) if buf is not None else _nullcontext():
         diags = DiagnosticSink()
         explainer = Explainer(level=narration)
 
         lexer = Lexer(source, explainer=explainer, diags=diags, filename=filename)
         tokens = lexer.scan_tokens()
+        token_count = len(tokens)
+        lex_diags_end = len(diags.diags)
+        lexical_ok = not any(d.severity == Severity.FATAL for d in diags.diags[:lex_diags_end])
 
         if print_tokens:
             explainer.section("TOKENS")
@@ -59,6 +73,12 @@ def analyze_source(
                 ledger_text=None,
                 runtime_output=None,
                 program=None,
+                token_count=token_count,
+                statement_count=0,
+                lexical_ok=lexical_ok,
+                syntax_ok=False,
+                semantic_ok=False,
+                diagnostics=list(diags.diags),
             )
 
         # Parse with error recovery; catch ParsePanic if unrecoverable
@@ -66,8 +86,12 @@ def analyze_source(
         try:
             parser = Parser(tokens, explainer=explainer, diags=diags, filename=filename)
             program = parser.parse_program()
+            statement_count = len(program.statements)
         except ParsePanic:
             pass
+
+        parse_diags_end = len(diags.diags)
+        syntax_ok = not any(d.severity == Severity.FATAL for d in diags.diags[lex_diags_end:parse_diags_end])
 
         # Print recovery summary after parsing
         if diags.recovery_count > 0:
@@ -92,12 +116,21 @@ def analyze_source(
                 ledger_text=None,
                 runtime_output=None,
                 program=program,
+                token_count=token_count,
+                statement_count=statement_count,
+                lexical_ok=lexical_ok,
+                syntax_ok=syntax_ok,
+                semantic_ok=False,
+                diagnostics=list(diags.diags),
             )
 
         ledger = GreatLedger()
         sema = SemanticAnalyzer(ledger=ledger, explainer=explainer, diags=diags)
         if program is not None:
             sema.analyze(program)
+
+        semantic_diags_start = parse_diags_end
+        semantic_ok = not any(d.severity == Severity.FATAL for d in diags.diags[semantic_diags_start:])
 
         if run and not diags.has_fatal:
             rt = Interpreter(ledger=ledger).run(program)
@@ -116,6 +149,12 @@ def analyze_source(
         ledger_text=ledger_text if capture_output else None,
         runtime_output=runtime_out,
         program=program,
+        token_count=token_count,
+        statement_count=statement_count,
+        lexical_ok=lexical_ok,
+        syntax_ok=syntax_ok,
+        semantic_ok=semantic_ok,
+        diagnostics=list(diags.diags),
     )
 
 
