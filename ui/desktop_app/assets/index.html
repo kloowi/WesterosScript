@@ -14,7 +14,7 @@
       rel="stylesheet"
     />
     <script id="tailwind-config">
-      tailwind.config = {
+      tailwind.config = { 
         darkMode: "class",
         theme: {
           extend: {
@@ -190,7 +190,7 @@
       .terminal .t-line {
         display: flex;
         gap: 0.5rem;
-        align-items: flex-start;
+        align-items: center;
         padding: 0.1rem 0;
       }
       .terminal .t-tag {
@@ -203,7 +203,7 @@
         border: 1px solid rgba(255, 255, 255, 0.08);
         background: rgba(255, 255, 255, 0.04);
         color: rgba(226, 232, 240, 0.75);
-        margin-top: 0.05rem;
+        margin-top: 0;
       }
       .terminal .t-tag.maester {
         border-color: rgba(148, 163, 184, 0.22);
@@ -230,6 +230,16 @@
         background: rgba(52, 211, 153, 0.08);
         color: rgba(110, 231, 183, 0.98);
       }
+      .terminal .t-tag.step {
+        border-color: rgba(255, 217, 0, 0.34);
+        background: rgba(255, 217, 0, 0.1);
+        color: rgba(255, 236, 140, 0.98);
+      }
+      .terminal .t-tag.ok {
+        border-color: rgba(74, 222, 128, 0.32);
+        background: rgba(74, 222, 128, 0.08);
+        color: rgba(134, 239, 172, 0.98);
+      }
       .terminal .t-body {
         white-space: pre-wrap;
         word-break: break-word;
@@ -237,6 +247,180 @@
       }
       .terminal .t-dim {
         color: rgba(148, 163, 184, 0.75);
+      }
+
+      .ledger-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 0.65rem;
+      }
+      .ledger-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.5rem;
+        padding: 0.6rem 0.75rem;
+        border: 1px solid rgba(255, 217, 0, 0.16);
+        border-radius: 0.7rem;
+        background: linear-gradient(90deg, rgba(255, 217, 0, 0.08), rgba(255, 217, 0, 0.02));
+      }
+      .ledger-title {
+        color: rgba(255, 236, 140, 0.96);
+        font-size: 11px;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        font-weight: 700;
+      }
+      .ledger-sub {
+        color: rgba(148, 163, 184, 0.8);
+        font-size: 11px;
+      }
+      .ledger-table-wrap {
+        border: 1px solid rgba(255, 217, 0, 0.15);
+        border-radius: 0.7rem;
+        overflow: hidden;
+        background: rgba(6, 6, 3, 0.45);
+      }
+      .ledger-table {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+      }
+      .ledger-table thead th {
+        text-align: left;
+        font-size: 10px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: rgba(255, 236, 140, 0.95);
+        font-weight: 700;
+        background: rgba(255, 217, 0, 0.08);
+        border-bottom: 1px solid rgba(255, 217, 0, 0.15);
+        padding: 0.5rem 0.65rem;
+      }
+      .ledger-table tbody td {
+        padding: 0.5rem 0.65rem;
+        border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+        color: rgba(226, 232, 240, 0.94);
+        font-size: 12px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .ledger-table tbody tr:nth-child(odd) td {
+        background: rgba(148, 163, 184, 0.04);
+      }
+      .ledger-table tbody tr:hover td {
+        background: rgba(255, 217, 0, 0.07);
+      }
+      .ledger-table tbody tr:last-child td {
+        border-bottom: 0;
+      }
+      .ledger-col-num {
+        text-align: right;
+        font-variant-numeric: tabular-nums;
+      }
+      .ledger-type-pill {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.08rem 0.45rem;
+        border-radius: 999px;
+        border: 1px solid rgba(125, 211, 252, 0.28);
+        background: rgba(125, 211, 252, 0.08);
+        color: rgba(186, 230, 253, 0.96);
+        font-size: 10px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        font-weight: 700;
+      }
+      .ledger-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.4rem;
+      }
+      .ledger-chip {
+        padding: 0.2rem 0.45rem;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 217, 0, 0.2);
+        background: rgba(255, 217, 0, 0.07);
+        color: rgba(255, 236, 140, 0.94);
+        font-size: 10px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        white-space: nowrap;
+      }
+
+      .raven-wrap {
+        display: flex;
+        flex-direction: column;
+        gap: 0.65rem;
+      }
+      .raven-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.6rem;
+        padding: 0.6rem 0.75rem;
+        border: 1px solid rgba(110, 231, 183, 0.2);
+        border-radius: 0.7rem;
+        background: linear-gradient(90deg, rgba(52, 211, 153, 0.1), rgba(52, 211, 153, 0.03));
+      }
+      .raven-title {
+        color: rgba(167, 243, 208, 0.96);
+        font-size: 11px;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+        font-weight: 700;
+      }
+      .raven-count {
+        color: rgba(187, 247, 208, 0.92);
+        font-size: 10px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .raven-list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.45rem;
+      }
+      .raven-item {
+        display: grid;
+        grid-template-columns: 28px minmax(0, 1fr);
+        align-items: start;
+        gap: 0.55rem;
+        padding: 0.5rem 0.6rem;
+        border: 1px solid rgba(52, 211, 153, 0.15);
+        border-radius: 0.6rem;
+        background: rgba(16, 185, 129, 0.06);
+      }
+      .raven-item:hover {
+        background: rgba(16, 185, 129, 0.11);
+      }
+      .raven-index {
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+        min-width: 26px;
+        height: 20px;
+        border-radius: 999px;
+        border: 1px solid rgba(52, 211, 153, 0.24);
+        background: rgba(52, 211, 153, 0.12);
+        color: rgba(167, 243, 208, 0.95);
+        font-size: 10px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        font-weight: 700;
+      }
+      .raven-text {
+        color: rgba(226, 232, 240, 0.94);
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+      .raven-empty {
+        padding: 0.8rem;
+        border: 1px dashed rgba(148, 163, 184, 0.25);
+        border-radius: 0.7rem;
+        color: rgba(148, 163, 184, 0.8);
+        text-align: center;
       }
 
       #outputPane {
@@ -343,10 +527,10 @@
   </head>
   <body class="font-display text-slate-100 antialiased selection:bg-primary/30 p-4">
     <div class="w-full max-w-6xl mx-auto flex flex-col lg:flex-row lg:items-start gap-6">
-      <div class="relative w-full max-w-[780px] flex flex-col gap-6 lg:flex-none">
+      <div class="relative w-full max-w-[780px] flex flex-col gap-6 lg:flex-none lg:h-[680px]">
         <div class="relative">
         <div
-          class="w-full h-[330px] flex flex-col rounded-2xl glass-effect shadow-[0_0_40px_rgba(255,217,0,0.18),inset_0_0_26px_rgba(255,217,0,0.06)] overflow-hidden"
+          class="w-full h-[300px] lg:h-[306px] flex flex-col rounded-2xl glass-effect shadow-[0_0_40px_rgba(255,217,0,0.18),inset_0_0_26px_rgba(255,217,0,0.06)] overflow-hidden"
         >
           <div class="h-[52px] flex items-center justify-between px-5 bg-primary/5 border-b border-primary/20">
             <div class="flex items-center gap-2">
@@ -389,18 +573,24 @@ raven gold!
         </div>
       </div>
 
-      <div class="w-full h-[320px] rounded-2xl glass-effect shadow-[0_0_40px_rgba(255,217,0,0.16),inset_0_0_24px_rgba(255,217,0,0.06)] overflow-hidden">
+      <div class="w-full h-[350px] rounded-2xl glass-effect shadow-[0_0_40px_rgba(255,217,0,0.16),inset_0_0_24px_rgba(255,217,0,0.06)] overflow-hidden">
         <div class="h-full overflow-hidden p-6">
           <div class="h-full rounded-lg border border-primary/20 bg-black/30 overflow-hidden flex flex-col">
-            <div class="flex border-b border-primary/10 px-4 bg-black/10">
-              <button id="tabAnalysis" class="px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-primary border-b-2 border-primary">
-                MAESTER'S ANALYSIS
+            <div class="flex border-b border-primary/10 px-4 bg-black/10 overflow-x-auto">
+              <button id="tabLexical" class="tab-btn px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-primary border-b-2 border-primary whitespace-nowrap">
+                Grand Maester
               </button>
-              <button id="tabLedger" class="px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 hover:text-slate-200 transition-colors">
+              <button id="tabSyntax" class="tab-btn px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 hover:text-slate-200 transition-colors whitespace-nowrap">
+                Small Council
+              </button>
+              <button id="tabSemantic" class="tab-btn px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 hover:text-slate-200 transition-colors whitespace-nowrap">
+                Citadel
+              </button>
+              <button id="tabLedger" class="tab-btn px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 hover:text-slate-200 transition-colors whitespace-nowrap">
                 Great Ledger
               </button>
-              <button id="tabOutput" class="px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 hover:text-slate-200 transition-colors">
-                Output
+              <button id="tabOutput" class="tab-btn px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 hover:text-slate-200 transition-colors whitespace-nowrap">
+                Raven
               </button>
             </div>
             <div id="outputPane" class="flex-1 p-4 overflow-y-auto font-mono text-xs custom-scrollbar border-t border-primary/5">
@@ -482,12 +672,23 @@ raven gold!
       const output = document.getElementById("output");
       const overlay = document.getElementById("overlay");
       const lineNums = document.getElementById("lineNums");
-      const tabAnalysis = document.getElementById("tabAnalysis");
+      const tabLexical = document.getElementById("tabLexical");
+      const tabSyntax = document.getElementById("tabSyntax");
+      const tabSemantic = document.getElementById("tabSemantic");
       const tabOutput = document.getElementById("tabOutput");
       const tabLedger = document.getElementById("tabLedger");
+      const tabButtons = [tabLexical, tabSyntax, tabSemantic, tabLedger, tabOutput];
 
-      let lastResult = { output: "(ready)", diagnostics: "", ledger: "", runtime: "" };
-      let activeTab = "analysis";
+      let lastResult = {
+        output: "(ready)",
+        lexical: "",
+        syntax: "",
+        semantic: "",
+        diagnostics: "",
+        ledger: "",
+        runtime: "",
+      };
+      let activeTab = "lexical";
 
       function escapeHtml(s) {
         return s
@@ -659,6 +860,20 @@ raven gold!
             );
             continue;
           }
+          if (line.startsWith("[STEP]")) {
+            const body = line.slice("[STEP]".length).trimStart();
+            html.push(
+              `<div class="t-line"><span class="t-tag step">Step</span><span class="t-body">${escapeHtml(body)}</span></div>`,
+            );
+            continue;
+          }
+          if (line.startsWith("[OK]")) {
+            const body = line.slice("[OK]".length).trimStart();
+            html.push(
+              `<div class="t-line"><span class="t-tag ok">Success</span><span class="t-body">${escapeHtml(body)}</span></div>`,
+            );
+            continue;
+          }
           if (line.startsWith("[CITADEL]")) {
             const body = line.slice("[CITADEL]".length).trimStart();
             html.push(
@@ -689,20 +904,151 @@ raven gold!
         return html.length ? html.join("") : `<div class="t-line"><span class="t-body t-dim">(empty)</span></div>`;
       }
 
+      function formatLedger(text) {
+        const src = String(text || "").replaceAll("\r\n", "\n");
+        const lines = src
+          .split("\n")
+          .map((line) => line.trim())
+          .filter((line) => line.length > 0);
+
+        if (!lines.length || lines.includes("(empty)")) {
+          return `<div class="t-line"><span class="t-body t-dim">(empty)</span></div>`;
+        }
+
+        const headerLine = lines.find((line) => line.toUpperCase().includes("GREAT LEDGER")) || "Great Ledger";
+        const tableStart = lines.findIndex((line) => line.startsWith("NAME"));
+        if (tableStart === -1) {
+          return formatTerminal(src);
+        }
+
+        const summaryStart = lines.findIndex((line, idx) => idx > tableStart && line.startsWith("Total Level "));
+        const rowLines = lines.slice(tableStart + 2, summaryStart === -1 ? lines.length : summaryStart);
+        const summaryLines = summaryStart === -1 ? [] : lines.slice(summaryStart);
+
+        const rows = rowLines
+          .map((line) => line.split(/\s{2,}/))
+          .filter((cells) => cells.length >= 5)
+          .map((cells) => ({
+            name: cells[0],
+            type: cells[1],
+            level: cells[2],
+            width: cells[3],
+            offset: cells[4],
+          }));
+
+        const tableRows = rows.length
+          ? rows
+              .map(
+                (row) => `
+                  <tr>
+                    <td title="${escapeHtml(row.name)}">${escapeHtml(row.name)}</td>
+                    <td><span class="ledger-type-pill">${escapeHtml(row.type)}</span></td>
+                    <td class="ledger-col-num">${escapeHtml(row.level)}</td>
+                    <td class="ledger-col-num">${escapeHtml(row.width)}</td>
+                    <td class="ledger-col-num">${escapeHtml(row.offset)}</td>
+                  </tr>`,
+              )
+              .join("")
+          : `<tr><td colspan="5" class="t-dim">No symbols recorded.</td></tr>`;
+
+        const chips = summaryLines
+          .map((line) => `<span class="ledger-chip">${escapeHtml(line)}</span>`)
+          .join("");
+
+        return `
+          <div class="ledger-wrap">
+            <div class="ledger-head">
+              <div class="ledger-title">${escapeHtml(headerLine)}</div>
+              <div class="ledger-sub">${rows.length} symbol${rows.length === 1 ? "" : "s"}</div>
+            </div>
+            <div class="ledger-table-wrap">
+              <table class="ledger-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Type</th>
+                    <th>Lvl</th>
+                    <th>Width</th>
+                    <th>Offset</th>
+                  </tr>
+                </thead>
+                <tbody>${tableRows}</tbody>
+              </table>
+            </div>
+            ${chips ? `<div class="ledger-meta">${chips}</div>` : ""}
+          </div>
+        `;
+      }
+
+      function formatRavenOutput(text) {
+        const src = String(text || "").replaceAll("\r\n", "\n");
+        const lines = src
+          .split("\n")
+          .map((line) => line.trim())
+          .filter((line) => line.length > 0);
+
+        if (!lines.length) {
+          return `<div class="raven-empty">No raven messages were sent.</div>`;
+        }
+
+        const messages = lines.map((line) => {
+          if (line.startsWith("[Output]")) {
+            return line.slice("[Output]".length).trimStart();
+          }
+          return line;
+        });
+
+        const items = messages
+          .map(
+            (msg, idx) => `
+              <div class="raven-item">
+                <span class="raven-index">${idx + 1}</span>
+                <span class="raven-text">${escapeHtml(msg)}</span>
+              </div>`,
+          )
+          .join("");
+
+        return `
+          <div class="raven-wrap">
+            <div class="raven-head">
+              <div class="raven-title">Raven Dispatch</div>
+              <div class="raven-count">${messages.length} message${messages.length === 1 ? "" : "s"}</div>
+            </div>
+            <div class="raven-list">${items}</div>
+          </div>
+        `;
+      }
+
       function setTab(tab) {
         activeTab = tab;
         const active =
-          "px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-primary border-b-2 border-primary";
+          "tab-btn px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-primary border-b-2 border-primary whitespace-nowrap";
         const inactive =
-          "px-4 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 hover:text-slate-200 transition-colors";
+          "tab-btn px-3 py-2 text-[10px] font-bold uppercase tracking-wider text-slate-500 hover:text-slate-200 transition-colors whitespace-nowrap";
 
-        tabAnalysis.className = tab === "analysis" ? active : inactive;
+        tabLexical.className = tab === "lexical" ? active : inactive;
+        tabSyntax.className = tab === "syntax" ? active : inactive;
+        tabSemantic.className = tab === "semantic" ? active : inactive;
         tabOutput.className = tab === "output" ? active : inactive;
         tabLedger.className = tab === "ledger" ? active : inactive;
 
-        if (tab === "analysis") output.innerHTML = formatTerminal(lastResult.output || "(ready)");
-        else if (tab === "output") output.innerHTML = formatTerminal(lastResult.runtime || "(no output)");
-        else output.innerHTML = formatTerminal(lastResult.ledger || "(empty)");
+        if (tab === "lexical") {
+          output.innerHTML = formatTerminal(lastResult.lexical || lastResult.output || "(ready)");
+          return;
+        }
+        if (tab === "syntax") {
+          output.innerHTML = formatTerminal(lastResult.syntax || "(empty)");
+          return;
+        }
+        if (tab === "semantic") {
+          output.innerHTML = formatTerminal(lastResult.semantic || "(empty)");
+          return;
+        }
+        if (tab === "output") {
+          output.innerHTML = formatRavenOutput(lastResult.runtime || "");
+          return;
+        }
+        output.innerHTML = formatLedger(lastResult.ledger || "(empty)");
       }
 
       async function requestAnalysis() {
@@ -712,6 +1058,9 @@ raven gold!
         const res = await window.pywebview.api.analyze(editor.value, "full");
         lastResult = {
           output: res.output || "",
+          lexical: res.lexical || "",
+          syntax: res.syntax || "",
+          semantic: res.semantic || "",
           diagnostics: res.diagnostics || "",
           ledger: res.ledger || "",
           runtime: res.runtime || "",
@@ -734,7 +1083,17 @@ raven gold!
       }
 
       analyzeBtn.addEventListener("click", analyze);
-      tabAnalysis.addEventListener("click", () => setTab("analysis"));
+      for (const btn of tabButtons) {
+        btn.addEventListener("keydown", (event) => {
+          if (event.key === "Enter" || event.key === " ") {
+            event.preventDefault();
+            btn.click();
+          }
+        });
+      }
+      tabLexical.addEventListener("click", () => setTab("lexical"));
+      tabSyntax.addEventListener("click", () => setTab("syntax"));
+      tabSemantic.addEventListener("click", () => setTab("semantic"));
       tabOutput.addEventListener("click", () => setTab("output"));
       tabLedger.addEventListener("click", () => setTab("ledger"));
       editor.addEventListener("input", syncOverlay);
@@ -750,7 +1109,7 @@ raven gold!
         editor.style.caretColor = "#ffd900";
         syncOverlay();
         syncScroll();
-        setTab("analysis");
+        setTab("lexical");
       });
     </script>
   </body>

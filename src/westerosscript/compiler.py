@@ -12,6 +12,7 @@ from westerosscript.parser import Parser, ParsePanic
 from westerosscript.semantic import SemanticAnalyzer
 from westerosscript.symbols import GreatLedger
 from westerosscript.interpreter import Interpreter
+from westerosscript.tokens import Token
 
 
 @dataclass(frozen=True)
@@ -27,6 +28,9 @@ class AnalyzeResult:
     lexical_ok: bool = False
     syntax_ok: bool = False
     semantic_ok: bool = False
+    tokens: list[Token] = field(default_factory=list)
+    lexical_diags_end: int = 0
+    syntax_diags_end: int = 0
     diagnostics: list[Diagnostic] = field(default_factory=list)
 
 
@@ -78,6 +82,9 @@ def analyze_source(
                 lexical_ok=lexical_ok,
                 syntax_ok=False,
                 semantic_ok=False,
+                tokens=list(tokens),
+                lexical_diags_end=lex_diags_end,
+                syntax_diags_end=lex_diags_end,
                 diagnostics=list(diags.diags),
             )
 
@@ -121,6 +128,9 @@ def analyze_source(
                 lexical_ok=lexical_ok,
                 syntax_ok=syntax_ok,
                 semantic_ok=False,
+                tokens=list(tokens),
+                lexical_diags_end=lex_diags_end,
+                syntax_diags_end=parse_diags_end,
                 diagnostics=list(diags.diags),
             )
 
@@ -154,6 +164,9 @@ def analyze_source(
         lexical_ok=lexical_ok,
         syntax_ok=syntax_ok,
         semantic_ok=semantic_ok,
+        tokens=list(tokens),
+        lexical_diags_end=lex_diags_end,
+        syntax_diags_end=parse_diags_end,
         diagnostics=list(diags.diags),
     )
 
