@@ -1,0 +1,8 @@
+coin gold claims 40!
+council gold greater_than 50 {
+  raven "The vault is overflowing"!
+} another_path gold equals 40 {
+  raven "The vault is balanced"!
+} otherwise {
+  raven "The vault is light"!
+}

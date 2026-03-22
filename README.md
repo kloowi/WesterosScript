@@ -54,6 +54,17 @@ py -3.13 ui/desktop_app/webview_main.py
 - `examples/syntax_error_missing_bang.wss`
 - `examples/semantic_error_type_mismatch.wss`
 
+Additional examples:
+
+- `examples/valid_for_loop.wss`
+- `examples/valid_if_else.wss`
+- `examples/valid_while_loop.wss`
+- `examples/valid_scoping.wss`
+- `examples/syntax_error_identifier_starts_with_digit.wss`
+- `examples/syntax_error_missing_delimiter.wss`
+- `examples/semantic_error_type_mismatch_assignment.wss`
+- `examples/semantic_error_type_mismatch_declaration.wss`
+
 ## UI reference (Stitch)
 
 The exported Stitch widget assets live under `ui/stitch/` for reference.

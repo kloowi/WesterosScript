@@ -1,0 +1,6 @@
+coin countdown claims 3!
+while_winter countdown greater_than 0 {
+  raven countdown!
+  countdown claims countdown clash 1!
+}
+raven "Winter has passed"!

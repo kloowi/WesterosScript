@@ -1,0 +1,5 @@
+coin total claims 0!
+for_each_house coin i claims 1 then 6 {
+  total claims total unite i!
+}
+raven total!
