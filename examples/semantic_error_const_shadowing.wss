@@ -1,0 +1,6 @@
+sigil coin DRAGON_LIMIT claims 3!
+{
+  coin DRAGON_LIMIT claims 5!
+  raven DRAGON_LIMIT!
+}
+raven DRAGON_LIMIT!

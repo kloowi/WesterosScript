@@ -58,6 +58,9 @@ class Interpreter:
             if sym is None:
                 # Semantic analysis should have caught this.
                 return
+            if sym.is_constant:
+                res.errors.append(f"Cannot reassign constant variable '{stmt.name}'.")
+                return
             sym.value = self._eval(stmt.value)
             return
 

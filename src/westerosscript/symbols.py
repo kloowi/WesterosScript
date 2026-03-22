@@ -10,6 +10,7 @@ class Symbol:
     name: str
     type_name: TypeName
     value: object
+    is_constant: bool = False
     level: int = 0  # Scope nesting level (0=global, 1=block, etc.)
     width: int = 0  # Size in bytes (coin=4, stag=4, oath=1, essence=8)
     offset: int = 0  # Byte offset within the scope's frame
@@ -36,7 +37,7 @@ class GreatLedger:
             self._offset_stack.pop()
             self._current_level -= 1
 
-    def define(self, name: str, type_name: TypeName, value: object) -> None:
+    def define(self, name: str, type_name: TypeName, value: object, *, is_constant: bool = False) -> None:
         current_scope = self._scope_stack[-1]
         width = _get_width(type_name)
         
@@ -51,6 +52,7 @@ class GreatLedger:
             name=name,
             type_name=type_name,
             value=value,
+            is_constant=is_constant,
             level=self._current_level,
             width=width,
             offset=offset
@@ -75,6 +77,14 @@ class GreatLedger:
     def all_items(self) -> list[Symbol]:
         # Return all items from all scopes (for detailed listing)
         return [sym for scope in self._scope_stack for sym in scope.values()]
+
+    def has_constant_name(self, name: str) -> bool:
+        """Return True if any scope already contains a constant with this name."""
+        for scope in self._scope_stack:
+            sym = scope.get(name)
+            if sym is not None and sym.is_constant:
+                return True
+        return False
 
     def to_text(self) -> str:
         lines: list[str] = []

@@ -40,6 +40,13 @@ class SemanticAnalyzer:
 
     def _stmt(self, stmt: ast.Stmt) -> None:
         if isinstance(stmt, ast.VarDecl):
+            if self.ledger.has_constant_name(stmt.name):
+                self.diags.fatal(
+                    f"Variable {stmt.name!r} cannot be declared because that name is reserved by a sigil constant.\n\n"
+                    "The Citadel forbids the shadowing of constant decrees."
+                )
+                return
+
             value, value_type = self._eval(stmt.initializer)
             if self.diags.has_fatal:
                 return
@@ -55,7 +62,7 @@ class SemanticAnalyzer:
             stored_value = _coerce(stmt.type_name, value)
             self.explainer.say("CITADEL", "Types are compatible.")
             self.explainer.say("CITADEL", f"Recording {stmt.name!r} into the Great Ledger.")
-            self.ledger.define(stmt.name, stmt.type_name, stored_value)
+            self.ledger.define(stmt.name, stmt.type_name, stored_value, is_constant=stmt.is_constant)
             return
 
         if isinstance(stmt, ast.Assign):
@@ -64,6 +71,13 @@ class SemanticAnalyzer:
                 self.diags.fatal(
                     f"Undeclared variable {stmt.name!r}. The variable must be declared before assignment.\n\n"
                     "The Citadel does not recognize this decree."
+                )
+                return
+
+            if sym.is_constant:
+                self.diags.fatal(
+                    f"Cannot reassign constant variable {stmt.name!r}.\n\n"
+                    "A sigil declaration is immutable once written in the Great Ledger."
                 )
                 return
 
