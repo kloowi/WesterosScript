@@ -167,7 +167,7 @@
         display: flex;
         justify-content: center;
         align-items: center;
-        padding: 0 1.5rem 0;
+        padding: 0 3rem 0;
         margin-top: 3rem;
       }
       .app-logo {
@@ -283,6 +283,9 @@
         letter-spacing: 0.16em;
         text-transform: uppercase;
         font-weight: 700;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
       .ledger-sub {
         color: rgba(148, 163, 184, 0.8);
@@ -310,14 +313,23 @@
         border-bottom: 1px solid rgba(255, 217, 0, 0.15);
         padding: 0.5rem 0.65rem;
       }
+      .ledger-table thead th.ledger-col-num {
+        text-align: right;
+      }
       .ledger-table tbody td {
         padding: 0.5rem 0.65rem;
         border-bottom: 1px solid rgba(148, 163, 184, 0.14);
         color: rgba(226, 232, 240, 0.94);
         font-size: 12px;
+        vertical-align: middle;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+      }
+      .ledger-empty {
+        text-align: center;
+        color: rgba(148, 163, 184, 0.82);
+        font-style: italic;
       }
       .ledger-table tbody tr:nth-child(odd) td {
         background: rgba(148, 163, 184, 0.04);
@@ -349,6 +361,7 @@
         display: flex;
         flex-wrap: wrap;
         gap: 0.4rem;
+        padding-bottom: 0.1rem;
       }
       .ledger-chip {
         padding: 0.2rem 0.45rem;
@@ -357,7 +370,7 @@
         background: rgba(255, 217, 0, 0.07);
         color: rgba(255, 236, 140, 0.94);
         font-size: 10px;
-        letter-spacing: 0.1em;
+        letter-spacing: 0.08em;
         text-transform: uppercase;
         white-space: nowrap;
       }
@@ -530,20 +543,6 @@
         color: rgba(226, 232, 240, 0.88);
       }
 
-      .ast-graph-shell {
-        display: grid;
-        grid-template-rows: 1fr;
-        height: 100%;
-        min-height: 0;
-        border: 1px solid rgba(255, 217, 0, 0.16);
-        border-radius: 0.95rem;
-        overflow: hidden;
-        background:
-          radial-gradient(120% 85% at 14% 6%, rgba(255, 217, 0, 0.12), rgba(255, 217, 0, 0) 58%),
-          radial-gradient(100% 80% at 82% 98%, rgba(52, 211, 153, 0.08), rgba(52, 211, 153, 0) 65%),
-          linear-gradient(180deg, rgba(8, 8, 4, 0.72), rgba(3, 3, 2, 0.78));
-        box-shadow: inset 0 0 0 1px rgba(255, 217, 0, 0.05), inset 0 24px 50px rgba(0, 0, 0, 0.35);
-      }
       .ast-graph-viewport {
         position: relative;
         overflow: hidden;
@@ -552,6 +551,7 @@
         background: transparent;
         min-height: 0;
         height: 100%;
+        width: 100%;
       }
       .ast-graph-viewport::before {
         content: "";
@@ -572,13 +572,13 @@
       .ast-link {
         fill: none;
         stroke: rgba(148, 163, 184, 0.42);
-        stroke-width: 1;
+        stroke-width: 0.5;
         stroke-linecap: round;
         stroke-linejoin: round;
       }
       .ast-link.edge-active {
         stroke: rgba(229, 231, 235, 0.9);
-        stroke-width: 1;
+        stroke-width: 0.5;
       }
       .ast-link.edge-muted {
         stroke: rgba(148, 163, 184, 0.18);
@@ -588,7 +588,7 @@
         transition: opacity 120ms ease;
       }
       .ast-node-card {
-        stroke-width: 1;
+        stroke-width: 0.5;
         transition: filter 120ms ease, stroke-width 120ms ease;
       }
       .ast-node.node-muted .ast-node-card {
@@ -698,7 +698,7 @@
             </div>
           </div>
           <div class="flex-1 p-6 overflow-hidden">
-            <div class="cheat-float ast-canvas h-full rounded-lg border border-primary/20 overflow-hidden custom-scrollbar p-4" id="astViewerPane">
+            <div class="cheat-float ast-canvas h-full rounded-lg border border-primary/20 bg-black/30 overflow-hidden custom-scrollbar" id="astViewerPane">
               <div class="ast-empty">Parse a program to view the Abstract Syntax Tree</div>
             </div>
           </div>
@@ -740,7 +740,10 @@
                       spellcheck="false"
                       wrap="off"
                     >coin gold claims 100!
-scroll name claims "Arya"!
+{ 
+  oath name claims 'A'!
+  stag silver claims 250.75!
+}
 raven gold!
 </textarea>
                   </div>
@@ -1100,7 +1103,11 @@ raven gold!
           return `<div class="t-line"><span class="t-body t-dim">(empty)</span></div>`;
         }
 
-        const headerLine = lines.find((line) => line.toUpperCase().includes("GREAT LEDGER")) || "Great Ledger";
+        const headerLineRaw = lines.find((line) => line.toUpperCase().includes("GREAT LEDGER")) || "Great Ledger";
+        const headerLine = headerLineRaw
+          .replace(/^[-\s]+/, "")
+          .replace(/[-\s]+$/, "")
+          .replace(/\s{2,}/g, " ");
         const tableStart = lines.findIndex((line) => line.startsWith("NAME"));
         if (tableStart === -1) {
           return formatTerminal(src);
@@ -1134,7 +1141,7 @@ raven gold!
                   </tr>`,
               )
               .join("")
-          : `<tr><td colspan="5" class="t-dim">No symbols recorded.</td></tr>`;
+          : `<tr><td colspan="5" class="ledger-empty">No symbols recorded.</td></tr>`;
 
         const chips = summaryLines
           .map((line) => `<span class="ledger-chip">${escapeHtml(line)}</span>`)
@@ -1152,9 +1159,9 @@ raven gold!
                   <tr>
                     <th>Name</th>
                     <th>Type</th>
-                    <th>Lvl</th>
-                    <th>Width</th>
-                    <th>Offset</th>
+                    <th class="ledger-col-num">Lvl</th>
+                    <th class="ledger-col-num">Width</th>
+                    <th class="ledger-col-num">Offset</th>
                   </tr>
                 </thead>
                 <tbody>${tableRows}</tbody>
@@ -1376,10 +1383,8 @@ raven gold!
         astGraphCleanup();
 
         astViewerPane.innerHTML = `
-          <div class="ast-graph-shell">
-            <div class="ast-graph-viewport" id="astGraphViewport">
-              <svg class="ast-graph-svg" id="astGraphSvg"></svg>
-            </div>
+          <div class="ast-graph-viewport" id="astGraphViewport">
+            <svg class="ast-graph-svg" id="astGraphSvg"></svg>
           </div>
         `;
 
@@ -1399,8 +1404,69 @@ raven gold!
         const topPad = 20;
         const bottomPad = 20;
 
-        const verticalGap = Math.max(74, Math.min(110, (viewportH - topPad - bottomPad) / Math.max(1, maxDepth + 1)));
-        const horizontalGap = Math.max(86, Math.min(136, (viewportW - leftPad - rightPad) / Math.max(1, maxDepth + 1)));
+        const layoutPreset =
+          nodeCount <= 8
+            ? {
+                verticalMin: 58,
+                verticalMax: 92,
+                horizontalMin: 74,
+                horizontalMax: 120,
+                spreadMin: 138,
+                spreadFactor: 1.24,
+                nodeWidthMin: 60,
+                nodeWidthMax: 122,
+                nodeLabelScale: 6.3,
+                nodePadding: 26,
+                nodeHeight: 32,
+                labelFontSize: 11.4,
+                labelDy: 4.7,
+                fitMargin: 14,
+                maxScale: 2.25,
+              }
+            : nodeCount <= 24
+              ? {
+                  verticalMin: 52,
+                  verticalMax: 82,
+                  horizontalMin: 78,
+                  horizontalMax: 126,
+                  spreadMin: 156,
+                  spreadFactor: 1.32,
+                  nodeWidthMin: 58,
+                  nodeWidthMax: 118,
+                  nodeLabelScale: 6,
+                  nodePadding: 24,
+                  nodeHeight: 28,
+                  labelFontSize: 11,
+                  labelDy: 4.3,
+                  fitMargin: 16,
+                  maxScale: 1.6,
+                }
+              : {
+                  verticalMin: 42,
+                  verticalMax: 68,
+                  horizontalMin: 54,
+                  horizontalMax: 88,
+                  spreadMin: 102,
+                  spreadFactor: 1.16,
+                  nodeWidthMin: 50,
+                  nodeWidthMax: 98,
+                  nodeLabelScale: 5.6,
+                  nodePadding: 20,
+                  nodeHeight: 24,
+                  labelFontSize: 10,
+                  labelDy: 4,
+                  fitMargin: 18,
+                  maxScale: 1.25,
+                };
+
+        const verticalGap = Math.max(
+          layoutPreset.verticalMin,
+          Math.min(layoutPreset.verticalMax, (viewportH - topPad - bottomPad) / Math.max(1, maxDepth + 1)),
+        );
+        const horizontalGap = Math.max(
+          layoutPreset.horizontalMin,
+          Math.min(layoutPreset.horizontalMax, (viewportW - leftPad - rightPad) / Math.max(1, maxDepth + 1)),
+        );
         const tree = d3
           .tree()
           .nodeSize([horizontalGap, verticalGap])
@@ -1417,7 +1483,7 @@ raven gold!
           levelNodes.sort((a, b) => a.x - b.x);
           const total = levelNodes.length;
           if (total <= 1) continue;
-          const spread = Math.max(130, (total - 1) * horizontalGap * 1.28);
+          const spread = Math.max(layoutPreset.spreadMin, (total - 1) * horizontalGap * layoutPreset.spreadFactor);
           const start = -spread / 2;
           levelNodes.forEach((node, idx) => {
             const targetX = start + (idx * spread) / (total - 1);
@@ -1467,11 +1533,14 @@ raven gold!
 
         function nodeWidth(nodeData) {
           const displayLabel = astDisplayLabel(nodeData.label);
-          return Math.max(58, Math.min(112, displayLabel.length * 6.1 + 20));
+          return Math.max(
+            layoutPreset.nodeWidthMin,
+            Math.min(layoutPreset.nodeWidthMax, displayLabel.length * layoutPreset.nodeLabelScale + layoutPreset.nodePadding),
+          );
         }
 
         function nodeHeight() {
-          return 28;
+          return layoutPreset.nodeHeight;
         }
 
         nodes
@@ -1486,7 +1555,8 @@ raven gold!
         nodes
           .append("text")
           .attr("class", (d) => `ast-node-title ${d.data.kind}`)
-          .attr("dy", 4)
+          .style("font-size", `${layoutPreset.labelFontSize}px`)
+          .attr("dy", layoutPreset.labelDy)
           .text((d) => astDisplayLabel(d.data.label).slice(0, 14));
 
         function setHoverState(activeId) {
@@ -1510,18 +1580,19 @@ raven gold!
             setHoverState(d.data.id);
           });
 
-        function fitGraphToViewport() {
+        function fitGraphToViewport(targetW = viewportW, targetH = viewportH) {
           const bounds = zoomLayer.node().getBBox();
           if (!bounds.width || !bounds.height) return;
 
-          const margin = 26;
-          const scale = Math.min(
-            (viewportW - margin * 2) / bounds.width,
-            (viewportH - margin * 2) / bounds.height,
-            1,
+          const margin = layoutPreset.fitMargin;
+          const rawScale = Math.min(
+            (targetW - margin * 2) / bounds.width,
+            (targetH - margin * 2) / bounds.height,
+            layoutPreset.maxScale,
           );
-          const tx = viewportW / 2 - (bounds.x + bounds.width / 2) * scale;
-          const ty = viewportH / 2 - (bounds.y + bounds.height / 2) * scale;
+          const scale = rawScale;
+          const tx = targetW / 2 - (bounds.x + bounds.width / 2) * scale;
+          const ty = targetH / 2 - (bounds.y + bounds.height / 2) * scale;
           zoomLayer.attr("transform", `translate(${tx},${ty}) scale(${scale})`);
         }
 
@@ -1531,18 +1602,7 @@ raven gold!
           const nextW = Math.max(1, viewport.clientWidth);
           const nextH = Math.max(1, viewport.clientHeight);
           svg.attr("viewBox", `0 0 ${nextW} ${nextH}`);
-
-          const bounds = zoomLayer.node().getBBox();
-          if (!bounds.width || !bounds.height) return;
-          const margin = 26;
-          const scale = Math.min(
-            (nextW - margin * 2) / bounds.width,
-            (nextH - margin * 2) / bounds.height,
-            1,
-          );
-          const tx = nextW / 2 - (bounds.x + bounds.width / 2) * scale;
-          const ty = nextH / 2 - (bounds.y + bounds.height / 2) * scale;
-          zoomLayer.attr("transform", `translate(${tx},${ty}) scale(${scale})`);
+          fitGraphToViewport(nextW, nextH);
         });
         resizeObserver.observe(viewport);
 
