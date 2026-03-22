@@ -163,11 +163,11 @@ def _build_semantic_output(res: object) -> str:
 def _syntax_statement_line(stmt: ast.Stmt) -> str:
     if isinstance(stmt, ast.VarDecl):
         const_prefix = "constant " if stmt.is_constant else ""
-        return f"{const_prefix}declaration for {stmt.name!r} with assignment rune present."
+        return f"{const_prefix}Declaration for {stmt.name!r} with assignment rune present."
     if isinstance(stmt, ast.Assign):
         return f"assignment updates {stmt.name!r} with a parsed expression and terminator."
     if isinstance(stmt, ast.Raven):
-        return "raven output statement with one expression payload."
+        return "Raven output statement with one expression payload."
     if isinstance(stmt, ast.Council):
         branches = len(stmt.branches)
         has_otherwise = "with otherwise" if stmt.otherwise_block is not None else "without otherwise"
@@ -201,16 +201,16 @@ def _semantic_events(program: ast.Program | None) -> list[str]:
 
 def _semantic_stmt_events(stmt: ast.Stmt, events: list[str]) -> None:
     if isinstance(stmt, ast.VarDecl):
-        events.append(f"declare {stmt.name!r} as {stmt.type_name.value} and type-check initializer.")
+        events.append(f"Declare {stmt.name!r} as {stmt.type_name.value} and Type-check initializer.")
         _semantic_expr_events(stmt.initializer, events)
         return
     if isinstance(stmt, ast.Assign):
-        events.append(f"resolve existing symbol {stmt.name!r} before assignment.")
+        events.append(f"Resolve existing symbol {stmt.name!r} before assignment.")
         _semantic_expr_events(stmt.value, events)
-        events.append(f"type-check assigned value against {stmt.name!r}.")
+        events.append(f"Type-check assigned value against {stmt.name!r}.")
         return
     if isinstance(stmt, ast.Raven):
-        events.append("type-check raven payload expression.")
+        events.append("Type-check raven payload expression.")
         _semantic_expr_events(stmt.value, events)
         return
     if isinstance(stmt, ast.Block):
@@ -258,10 +258,10 @@ def _semantic_stmt_events(stmt: ast.Stmt, events: list[str]) -> None:
 
 def _semantic_expr_events(expr: ast.Expr, events: list[str]) -> None:
     if isinstance(expr, ast.Literal):
-        events.append(f"literal {expr.value!r} mapped to a realm type.")
+        events.append(f"Literal {expr.value!r} mapped to a realm type.")
         return
     if isinstance(expr, ast.Identifier):
-        events.append(f"resolve identifier {expr.name!r} from the Great Ledger.")
+        events.append(f"Resolve identifier {expr.name!r} from the Great Ledger.")
         return
     if isinstance(expr, ast.Binary):
         events.append(f"evaluate binary operator {expr.op!r} over numeric-compatible operands.")
