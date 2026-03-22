@@ -21,6 +21,8 @@ class Explainer:
         Some Windows consoles default to legacy encodings (e.g. cp1252) that cannot
         print characters like '✓'. Replace unencodable characters rather than crash.
         """
+        if text.isascii():
+            return text
         enc = getattr(sys.stdout, "encoding", None) or "utf-8"
         try:
             text.encode(enc)

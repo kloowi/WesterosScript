@@ -49,25 +49,40 @@ class Diagnostic:
 @dataclass
 class DiagnosticSink:
     diags: list[Diagnostic] = field(default_factory=list)
+    _has_fatal: bool = False
+    _recovery_count: int = 0
+    _auto_insert_count: int = 0
+    _panic_skip_count: int = 0
+
+    def _append(self, diag: Diagnostic) -> None:
+        self.diags.append(diag)
+        if diag.severity == Severity.FATAL:
+            self._has_fatal = True
+        if diag.recovery_strategy != RecoveryStrategy.NONE:
+            self._recovery_count += 1
+            if diag.recovery_strategy == RecoveryStrategy.AUTO_INSERT:
+                self._auto_insert_count += 1
+            elif diag.recovery_strategy == RecoveryStrategy.PANIC_SKIP:
+                self._panic_skip_count += 1
 
     @property
     def has_fatal(self) -> bool:
-        return any(d.severity == Severity.FATAL for d in self.diags)
+        return self._has_fatal
     
     @property
     def recovery_count(self) -> int:
         """Count diagnostics that used recovery strategies."""
-        return sum(1 for d in self.diags if d.recovery_strategy != RecoveryStrategy.NONE)
+        return self._recovery_count
     
     @property
     def auto_insert_count(self) -> int:
         """Count AUTO_INSERT recovery strategy uses."""
-        return sum(1 for d in self.diags if d.recovery_strategy == RecoveryStrategy.AUTO_INSERT)
+        return self._auto_insert_count
     
     @property
     def panic_skip_count(self) -> int:
         """Count PANIC_SKIP recovery strategy uses."""
-        return sum(1 for d in self.diags if d.recovery_strategy == RecoveryStrategy.PANIC_SKIP)
+        return self._panic_skip_count
 
     def info(
         self, 
@@ -79,15 +94,15 @@ class DiagnosticSink:
         recovery_strategy: RecoveryStrategy = RecoveryStrategy.NONE,
         recovery_detail: str | None = None
     ) -> None:
-        self.diags.append(
+        self._append(
             Diagnostic(
-                Severity.INFO, 
-                message, 
-                filename, 
-                line, 
+                Severity.INFO,
+                message,
+                filename,
+                line,
                 col,
                 recovery_strategy=recovery_strategy,
-                recovery_detail=recovery_detail
+                recovery_detail=recovery_detail,
             )
         )
 
@@ -101,15 +116,15 @@ class DiagnosticSink:
         recovery_strategy: RecoveryStrategy = RecoveryStrategy.NONE,
         recovery_detail: str | None = None
     ) -> None:
-        self.diags.append(
+        self._append(
             Diagnostic(
-                Severity.WARNING, 
-                message, 
-                filename, 
-                line, 
+                Severity.WARNING,
+                message,
+                filename,
+                line,
                 col,
                 recovery_strategy=recovery_strategy,
-                recovery_detail=recovery_detail
+                recovery_detail=recovery_detail,
             )
         )
 
@@ -123,15 +138,15 @@ class DiagnosticSink:
         recovery_strategy: RecoveryStrategy = RecoveryStrategy.NONE,
         recovery_detail: str | None = None
     ) -> None:
-        self.diags.append(
+        self._append(
             Diagnostic(
-                Severity.FATAL, 
-                message, 
-                filename, 
-                line, 
+                Severity.FATAL,
+                message,
+                filename,
+                line,
                 col,
                 recovery_strategy=recovery_strategy,
-                recovery_detail=recovery_detail
+                recovery_detail=recovery_detail,
             )
         )
 

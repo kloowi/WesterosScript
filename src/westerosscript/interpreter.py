@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 from westerosscript import ast
-from westerosscript.symbols import GreatLedger, Symbol
+from westerosscript.symbols import GreatLedger
 
 
 class _LoopBreak(Exception):
@@ -53,34 +53,12 @@ class Interpreter:
             return
 
         if isinstance(stmt, ast.Assign):
-            # Update an existing symbol value in the ledger.
-            # First, find which scope has this symbol (from inner to outer)
+            # Update an existing symbol value in-place.
             sym = self.ledger.get(stmt.name)
             if sym is None:
                 # Semantic analysis should have caught this.
                 return
-            value = self._eval(stmt.value)
-            
-            # Update the symbol in its original scope, preserving its level/width/offset
-            # Search through the scope stack to find and update the symbol
-            found = False
-            for scope in reversed(self.ledger._scope_stack):
-                if stmt.name in scope:
-                    # Preserve the original level/width/offset, just update value
-                    scope[stmt.name] = Symbol(
-                        name=stmt.name,
-                        type_name=sym.type_name,
-                        value=value,
-                        level=sym.level,
-                        width=sym.width,
-                        offset=sym.offset
-                    )
-                    found = True
-                    break
-            
-            if not found:
-                # Fallback: define in current scope (shouldn't happen if semantic analysis is correct)
-                self.ledger.define(stmt.name, sym.type_name, value)
+            sym.value = self._eval(stmt.value)
             return
 
         if isinstance(stmt, ast.Raven):
@@ -141,10 +119,15 @@ class Interpreter:
                 end = int(self._eval(stmt.end))
                 iters = 0
 
+                # Define loop variable once, then mutate its value per iteration.
+                self.ledger.define(stmt.name, ast.TypeName.COIN, start)
+                loop_var = self.ledger.get(stmt.name)
+                if loop_var is None:
+                    return
+
                 i = start
                 while i < end:
-                    # Store current iteration value in the loop scope
-                    self.ledger.define(stmt.name, ast.TypeName.COIN, i)
+                    loop_var.value = i
                     try:
                         self._stmt(stmt.body, res)
                     except _LoopContinue:

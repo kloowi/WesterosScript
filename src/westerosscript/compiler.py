@@ -15,6 +15,14 @@ from westerosscript.interpreter import Interpreter
 from westerosscript.tokens import Token
 
 
+def _has_fatal(diags: list[Diagnostic], start: int = 0, end: int | None = None) -> bool:
+    stop = len(diags) if end is None else end
+    for idx in range(start, stop):
+        if diags[idx].severity == Severity.FATAL:
+            return True
+    return False
+
+
 @dataclass(frozen=True)
 class AnalyzeResult:
     ok: bool
@@ -60,7 +68,7 @@ def analyze_source(
         tokens = lexer.scan_tokens()
         token_count = len(tokens)
         lex_diags_end = len(diags.diags)
-        lexical_ok = not any(d.severity == Severity.FATAL for d in diags.diags[:lex_diags_end])
+        lexical_ok = not _has_fatal(diags.diags, 0, lex_diags_end)
 
         if print_tokens:
             explainer.section("TOKENS")
@@ -98,7 +106,7 @@ def analyze_source(
             pass
 
         parse_diags_end = len(diags.diags)
-        syntax_ok = not any(d.severity == Severity.FATAL for d in diags.diags[lex_diags_end:parse_diags_end])
+        syntax_ok = not _has_fatal(diags.diags, lex_diags_end, parse_diags_end)
 
         # Print recovery summary after parsing
         if diags.recovery_count > 0:
@@ -140,7 +148,7 @@ def analyze_source(
             sema.analyze(program)
 
         semantic_diags_start = parse_diags_end
-        semantic_ok = not any(d.severity == Severity.FATAL for d in diags.diags[semantic_diags_start:])
+        semantic_ok = not _has_fatal(diags.diags, semantic_diags_start)
 
         if run and not diags.has_fatal:
             rt = Interpreter(ledger=ledger).run(program)
@@ -151,12 +159,12 @@ def analyze_source(
 
         diags.print()
 
-    ledger_text = ledger.to_text()
+    ledger_text = ledger.to_text() if capture_output else None
     return AnalyzeResult(
         ok=not diags.has_fatal,
         ledger=ledger,
         output=buf.getvalue() if buf is not None else None,
-        ledger_text=ledger_text if capture_output else None,
+        ledger_text=ledger_text,
         runtime_output=runtime_out,
         program=program,
         token_count=token_count,

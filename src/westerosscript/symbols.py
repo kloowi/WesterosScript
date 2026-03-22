@@ -63,8 +63,9 @@ class GreatLedger:
     def get(self, name: str) -> Symbol | None:
         # Search from innermost to outermost scope
         for scope in reversed(self._scope_stack):
-            if name in scope:
-                return scope[name]
+            sym = scope.get(name)
+            if sym is not None:
+                return sym
         return None
 
     def items(self) -> list[Symbol]:
@@ -73,10 +74,7 @@ class GreatLedger:
     
     def all_items(self) -> list[Symbol]:
         # Return all items from all scopes (for detailed listing)
-        items = []
-        for scope in self._scope_stack:
-            items.extend(scope.values())
-        return items
+        return [sym for scope in self._scope_stack for sym in scope.values()]
 
     def to_text(self) -> str:
         lines: list[str] = []

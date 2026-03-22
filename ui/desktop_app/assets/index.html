@@ -1452,7 +1452,6 @@ raven gold!
 
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
     <script>
       const openBtn = document.getElementById("openBtn");
       const saveAsBtn = document.getElementById("saveAsBtn");
@@ -1473,6 +1472,7 @@ raven gold!
       const transitionVeil = document.getElementById("transitionVeil");
       const beginInscriptionBtn = document.getElementById("beginInscriptionBtn");
       const tabButtons = [tabLexical, tabSyntax, tabSemantic, tabLedger, tabOutput];
+      const D3_CDN_URL = "https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js";
 
       let lastResult = {
         output: "(ready)",
@@ -1491,6 +1491,10 @@ raven gold!
       let isViewTransitioning = false;
       let currentFilePath = "";
       let currentFileName = "";
+      let d3LoadPromise = null;
+      let lastOverlaySource = null;
+      let lastOverlayLineCount = 0;
+      let overlaySyncScheduled = false;
 
       const bgEmbers = document.getElementById("bgEmbers");
       const bgSmokeWisps = document.getElementById("bgSmokeWisps");
@@ -1500,12 +1504,30 @@ raven gold!
         return min + Math.random() * (max - min);
       }
 
-      function delayMs(ms) {
-        return new Promise((resolve) => setTimeout(resolve, ms));
-      }
-
       function hasPywebviewApi() {
         return !!(window.pywebview && window.pywebview.api);
+      }
+
+      function runAfterFirstPaint(task) {
+        requestAnimationFrame(() => {
+          setTimeout(task, 0);
+        });
+      }
+
+      function ensureD3Loaded() {
+        if (window.d3) return Promise.resolve(true);
+        if (d3LoadPromise) return d3LoadPromise;
+
+        d3LoadPromise = new Promise((resolve) => {
+          const script = document.createElement("script");
+          script.src = D3_CDN_URL;
+          script.async = true;
+          script.onload = () => resolve(true);
+          script.onerror = () => resolve(false);
+          document.head.appendChild(script);
+        });
+
+        return d3LoadPromise;
       }
 
       function updateFileStatus(name = "", path = "") {
@@ -1867,15 +1889,39 @@ raven gold!
         return out.join("");
       }
 
-      function syncOverlay() {
+      function countLines(text) {
+        let count = 1;
+        for (let i = 0; i < text.length; i += 1) {
+          if (text.charCodeAt(i) === 10) count += 1;
+        }
+        return count;
+      }
+
+      function syncOverlay(force = false) {
         const src = editor.value.replaceAll("\r\n", "\n");
+        if (!force && src === lastOverlaySource) return;
+
         // Use the textarea caret as the single typing indicator.
         overlay.innerHTML = highlight(src);
 
-        const lines = Math.max(1, src.split("\n").length);
-        let nums = "";
-        for (let i = 1; i <= lines; i++) nums += `<div>${i}</div>`;
-        lineNums.innerHTML = nums;
+        const lines = countLines(src);
+        if (force || lines !== lastOverlayLineCount) {
+          let nums = "";
+          for (let i = 1; i <= lines; i += 1) nums += `<div>${i}</div>`;
+          lineNums.innerHTML = nums;
+          lastOverlayLineCount = lines;
+        }
+
+        lastOverlaySource = src;
+      }
+
+      function scheduleOverlaySync() {
+        if (overlaySyncScheduled) return;
+        overlaySyncScheduled = true;
+        requestAnimationFrame(() => {
+          overlaySyncScheduled = false;
+          syncOverlay();
+        });
       }
 
       function syncScroll() {
@@ -2473,11 +2519,17 @@ raven gold!
         `;
       }
 
-      function displayAST(astJson) {
+      async function displayAST(astJson) {
         const parsed = astTryParseJson(astJson);
 
         if (!parsed) {
           renderAstPlaceholderGrid();
+          return;
+        }
+
+        const d3Ready = await ensureD3Loaded();
+        if (!d3Ready || !window.d3) {
+          astViewerPane.innerHTML = '<div class="ast-empty">AST graph renderer unavailable.</div>';
           return;
         }
 
@@ -2589,19 +2641,7 @@ raven gold!
         try {
           await requestAnalysis();
 
-          const processingDelay = reducedMotionMedia.matches ? 0 : 260;
-
-          if (processingDelay > 0) {
-            output.innerHTML = formatTerminal("[STEP] The Citadel is charting the AST...");
-            await delayMs(processingDelay);
-          }
-
-          displayAST(lastResult.ast);
-
-          if (processingDelay > 0) {
-            output.innerHTML = formatTerminal("[STEP] The Maesters are drafting the report...");
-            await delayMs(processingDelay);
-          }
+          await displayAST(lastResult.ast);
 
           setTab(activeTab);
         } catch (e) {
@@ -2630,7 +2670,7 @@ raven gold!
       tabSemantic.addEventListener("click", () => setTab("semantic"));
       tabOutput.addEventListener("click", () => setTab("output"));
       tabLedger.addEventListener("click", () => setTab("ledger"));
-      editor.addEventListener("input", syncOverlay);
+      editor.addEventListener("input", scheduleOverlaySync);
       editor.addEventListener("scroll", syncScroll);
       window.addEventListener("load", () => {
         document.body.classList.add("landing-active");
@@ -2642,13 +2682,15 @@ raven gold!
         editor.style.background = "transparent";
         editor.style.color = "transparent";
         editor.style.caretColor = "#ffd900";
-        syncOverlay();
+        syncOverlay(true);
         syncScroll();
         setTab("lexical");
         updateFileStatus("", "");
 
-        displayAST("");
-        initForgeBackground();
+        runAfterFirstPaint(() => {
+          displayAST("");
+          initForgeBackground();
+        });
       });
     </script>
   </body>
