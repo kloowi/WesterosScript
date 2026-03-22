@@ -122,15 +122,16 @@ class WesterosApi:
         if self._window is None or self._open_dialog_kind is None:
             return None
 
+        file_filter = (("WesterosScript (*.wss)", "*.wss"),)
         picked = None
         try:
             picked = self._window.create_file_dialog(
                 self._open_dialog_kind,
                 allow_multiple=False,
                 directory=str(self._repo_root),
-                file_types=("WesterosScript (*.wss)", "*.wss"),
+                file_types=file_filter,
             )
-        except TypeError:
+        except (TypeError, ValueError):
             picked = self._window.create_file_dialog(self._open_dialog_kind)
 
         path = self._coerce_dialog_path(picked)
@@ -146,15 +147,16 @@ class WesterosApi:
         if not safe_name.lower().endswith(".wss"):
             safe_name = f"{safe_name}.wss"
 
+        file_filter = (("WesterosScript (*.wss)", "*.wss"),)
         picked = None
         try:
             picked = self._window.create_file_dialog(
                 self._save_dialog_kind,
                 save_filename=safe_name,
                 directory=str(self._repo_root),
-                file_types=("WesterosScript (*.wss)", "*.wss"),
+                file_types=file_filter,
             )
-        except TypeError:
+        except (TypeError, ValueError):
             picked = self._window.create_file_dialog(self._save_dialog_kind, save_filename=safe_name)
 
         path = self._coerce_dialog_path(picked)

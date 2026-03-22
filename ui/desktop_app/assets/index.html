@@ -1495,6 +1495,7 @@ raven gold!
       let lastOverlaySource = null;
       let lastOverlayLineCount = 0;
       let overlaySyncScheduled = false;
+      let pywebviewApiPromise = null;
 
       const bgEmbers = document.getElementById("bgEmbers");
       const bgSmokeWisps = document.getElementById("bgSmokeWisps");
@@ -1506,6 +1507,49 @@ raven gold!
 
       function hasPywebviewApi() {
         return !!(window.pywebview && window.pywebview.api);
+      }
+
+      function waitForPywebviewApi(timeoutMs = 8000) {
+        if (hasPywebviewApi()) return Promise.resolve(window.pywebview.api);
+        if (pywebviewApiPromise) return pywebviewApiPromise;
+
+        pywebviewApiPromise = new Promise((resolve, reject) => {
+          const start = Date.now();
+          let finished = false;
+
+          const cleanup = () => {
+            finished = true;
+            if (pollId !== null) clearInterval(pollId);
+            window.removeEventListener("pywebviewready", onReady);
+          };
+
+          const settleIfReady = () => {
+            if (!hasPywebviewApi()) return false;
+            cleanup();
+            resolve(window.pywebview.api);
+            return true;
+          };
+
+          const onReady = () => {
+            settleIfReady();
+          };
+
+          const pollId = setInterval(() => {
+            if (finished) return;
+            if (settleIfReady()) return;
+            if (Date.now() - start >= timeoutMs) {
+              cleanup();
+              reject(new Error("pywebview API did not become ready in time."));
+            }
+          }, 60);
+
+          window.addEventListener("pywebviewready", onReady, { once: false });
+          settleIfReady();
+        }).finally(() => {
+          pywebviewApiPromise = null;
+        });
+
+        return pywebviewApiPromise;
       }
 
       function runAfterFirstPaint(task) {
@@ -2573,10 +2617,8 @@ raven gold!
       }
 
       async function requestAnalysis() {
-        if (!window.pywebview || !window.pywebview.api) {
-          throw new Error("pywebview API not available yet. Please wait...");
-        }
-        const res = await window.pywebview.api.analyze(editor.value, "full");
+        const api = await waitForPywebviewApi();
+        const res = await api.analyze(editor.value, "full");
         lastResult = {
           output: res.output || "",
           lexical: res.lexical || "",
@@ -2596,11 +2638,15 @@ raven gold!
       }
 
       async function openFileFromDialog() {
-        if (!hasPywebviewApi()) {
-          output.innerHTML = formatTerminal("[MAESTER WARNING] pywebview API not available yet. Please wait...");
+        let api;
+        try {
+          api = await waitForPywebviewApi();
+        } catch (err) {
+          output.innerHTML = formatTerminal(`[MAESTER WARNING] ${String(err.message || err)}`);
           return;
         }
-        const res = await window.pywebview.api.open_file();
+
+        const res = await api.open_file();
         if (!res || res.canceled) {
           output.innerHTML = formatTerminal("[MAESTER] Open canceled.");
           return;
@@ -2615,12 +2661,16 @@ raven gold!
       }
 
       async function saveFileAsDialog() {
-        if (!hasPywebviewApi()) {
-          output.innerHTML = formatTerminal("[MAESTER WARNING] pywebview API not available yet. Please wait...");
+        let api;
+        try {
+          api = await waitForPywebviewApi();
+        } catch (err) {
+          output.innerHTML = formatTerminal(`[MAESTER WARNING] ${String(err.message || err)}`);
           return;
         }
+
         const suggested = currentFileName || "script.wss";
-        const res = await window.pywebview.api.save_file_as(editor.value, suggested);
+        const res = await api.save_file_as(editor.value, suggested);
         if (!res || res.canceled) {
           output.innerHTML = formatTerminal("[MAESTER] Save canceled.");
           return;
