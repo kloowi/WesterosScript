@@ -38,6 +38,18 @@
       };
     </script>
     <style>
+      :root {
+        --forge-deep: #1a0f06;
+        --forge-ember: rgba(255, 82, 34, 0.52);
+        --forge-flame: rgba(255, 46, 24, 0.48);
+        --forge-glow: rgba(255, 171, 94, 0.34);
+      }
+
+      html,
+      body {
+        min-height: 100%;
+      }
+
       .glass-effect {
         background: linear-gradient(
           180deg,
@@ -70,19 +82,346 @@
         background: #ffd90033;
         border-radius: 10px;
       }
+
+      @keyframes smokeDrift {
+        0% {
+          transform: translate3d(-3%, -1%, 0) scale(1);
+        }
+        50% {
+          transform: translate3d(2%, 2%, 0) scale(1.08);
+        }
+        100% {
+          transform: translate3d(-2%, -2%, 0) scale(1.04);
+        }
+      }
+
+      @keyframes forgeBreath {
+        0%,
+        17%,
+        21%,
+        60%,
+        100% {
+          opacity: 0.68;
+          filter: blur(54px) saturate(152%) brightness(1.06);
+        }
+        19%,
+        24% {
+          opacity: 0.84;
+          filter: blur(40px) saturate(175%) brightness(1.24);
+        }
+        52% {
+          opacity: 0.76;
+          filter: blur(46px) saturate(165%) brightness(1.16);
+        }
+      }
+
+      @keyframes emberRise {
+        0% {
+          transform: translate3d(0, 0, 0) scale(0.82);
+          opacity: 0;
+        }
+        12% {
+          opacity: var(--ember-alpha, 0.9);
+        }
+        88% {
+          opacity: calc(var(--ember-alpha, 0.9) * 0.54);
+        }
+        100% {
+          transform: translate3d(var(--ember-drift, 12px), calc(-1 * var(--ember-rise, 68vh)), 0)
+            scale(0.24);
+          opacity: 0;
+        }
+      }
+
+      @keyframes emberTwinkle {
+        0%,
+        100% {
+          filter: brightness(1.14) saturate(128%);
+        }
+        40% {
+          filter: brightness(1.98) saturate(182%);
+        }
+        70% {
+          filter: brightness(1.48) saturate(160%);
+        }
+      }
+
+      @keyframes smokeWispRise {
+        0% {
+          transform: translate3d(0, 0, 0) scale(0.84);
+          opacity: 0;
+        }
+        16% {
+          opacity: var(--wisp-opacity, 0.28);
+        }
+        100% {
+          transform: translate3d(var(--wisp-drift, 32px), calc(-1 * var(--wisp-rise, 56vh)), 0) scale(1.22);
+          opacity: 0;
+        }
+      }
+
+      @keyframes smokeWispSway {
+        0%,
+        100% {
+          filter: blur(var(--wisp-blur-max, 18px)) brightness(0.86);
+        }
+        50% {
+          filter: blur(var(--wisp-blur-min, 10px)) brightness(1.22);
+        }
+      }
+
+      @keyframes smokeWispMicroDrift {
+        0%,
+        100% {
+          margin-left: 0;
+        }
+        50% {
+          margin-left: var(--micro-drift, 8px);
+        }
+      }
+
+      @keyframes smokeWispTwist {
+        0%,
+        100% {
+          transform: rotate(var(--wisp-tilt-a, -4deg)) scaleX(var(--wisp-stretch-a, 1));
+        }
+        50% {
+          transform: rotate(var(--wisp-tilt-b, 6deg)) scaleX(var(--wisp-stretch-b, 1.16));
+        }
+      }
+
+      @keyframes smokeWispShear {
+        0%,
+        100% {
+          transform: translate3d(-5%, 0, 0) scale(1);
+          opacity: 0.66;
+        }
+        50% {
+          transform: translate3d(7%, -4%, 0) scale(1.08);
+          opacity: 0.9;
+        }
+      }
+
       body {
         display: flex;
         align-items: flex-start;
         justify-content: center;
         min-height: 100vh;
         margin: 0;
+        overflow-x: hidden;
+        background: var(--forge-deep);
+      }
+
+      body.landing-active {
+        align-items: center;
+      }
+
+      .app-shell {
+        position: relative;
+        z-index: 10;
+      }
+
+      #transitionVeil {
+        position: fixed;
+        inset: 0;
+        z-index: 6;
+        pointer-events: none;
+        opacity: 0;
+        background:
+          radial-gradient(90vw 64vh at 50% 12%, rgba(255, 186, 120, 0.16) 0%, rgba(255, 186, 120, 0) 62%),
+          radial-gradient(120vw 88vh at 50% 108%, rgba(255, 96, 36, 0.26) 0%, rgba(255, 96, 36, 0) 68%),
+          linear-gradient(180deg, rgba(19, 10, 4, 0.14) 0%, rgba(29, 15, 8, 0.58) 56%, rgba(13, 7, 3, 0.86) 100%);
+        will-change: opacity;
+      }
+
+      #bgForge {
+        position: fixed;
+        inset: 0;
+        z-index: 0;
+        pointer-events: none;
+        overflow: hidden;
+      }
+
+      .forge-layer {
+        position: absolute;
+        inset: 0;
+      }
+
+      .forge-base {
         background-image:
-          radial-gradient(900px 520px at 25% 15%, rgba(255, 217, 0, 0.10) 0%, rgba(255, 217, 0, 0) 60%),
-          radial-gradient(800px 520px at 80% 85%, rgba(66, 245, 176, 0.07) 0%, rgba(66, 245, 176, 0) 55%),
-          radial-gradient(900px 620px at 65% 20%, rgba(255, 140, 0, 0.06) 0%, rgba(255, 140, 0, 0) 55%),
+          radial-gradient(94vw 72vh at 50% 112%, rgba(255, 56, 24, 0.34) 0%, rgba(255, 56, 24, 0) 64%),
+          radial-gradient(84vw 64vh at 80% 98%, rgba(255, 103, 40, 0.24) 0%, rgba(255, 103, 40, 0) 60%),
+          radial-gradient(92vw 70vh at 12% 96%, rgba(221, 38, 18, 0.26) 0%, rgba(221, 38, 18, 0) 60%),
+          radial-gradient(110vw 90vh at 50% -8%, rgba(255, 217, 0, 0.07) 0%, rgba(255, 217, 0, 0) 62%),
+          linear-gradient(180deg, rgba(44, 24, 10, 0.94) 0%, rgba(31, 16, 8, 0.98) 54%, rgba(24, 12, 6, 0.99) 100%),
           url("APP-background.png");
-        background-size: auto, auto, auto, cover;
-        background-position: center, center, center, center;
+        background-size: auto, auto, auto, auto, auto, cover;
+        background-position: center, center, center, center, center, center;
+        filter: saturate(118%) contrast(108%);
+      }
+
+      .forge-smoke {
+        background:
+          radial-gradient(74vw 58vh at 20% 84%, rgba(233, 159, 118, 0.32) 0%, rgba(233, 159, 118, 0) 69%),
+          radial-gradient(72vw 58vh at 82% 76%, rgba(212, 136, 102, 0.28) 0%, rgba(212, 136, 102, 0) 68%),
+          radial-gradient(60vw 48vh at 46% 62%, rgba(176, 120, 98, 0.24) 0%, rgba(176, 120, 98, 0) 69%),
+          radial-gradient(120vw 76vh at 50% 110%, rgba(132, 90, 73, 0.2) 0%, rgba(132, 90, 73, 0) 75%);
+        mix-blend-mode: screen;
+        opacity: 0.72;
+        filter: blur(36px);
+        animation: smokeDrift 28s ease-in-out infinite alternate;
+      }
+
+      .forge-flame {
+        background:
+          radial-gradient(40vw 38vh at 14% 104%, var(--forge-flame) 0%, rgba(255, 56, 28, 0) 74%),
+          radial-gradient(38vw 36vh at 84% 103%, var(--forge-ember) 0%, rgba(255, 86, 34, 0) 72%),
+          radial-gradient(44vw 36vh at 48% 98%, var(--forge-glow) 0%, rgba(255, 171, 94, 0) 76%);
+        opacity: 0.76;
+        filter: blur(44px);
+        animation: forgeBreath 7.8s ease-in-out infinite;
+      }
+
+      .forge-vignette {
+        background:
+          radial-gradient(120vw 95vh at 50% 12%, rgba(60, 28, 12, 0) 38%, rgba(38, 18, 8, 0.42) 100%),
+          linear-gradient(180deg, rgba(52, 26, 12, 0.24) 0%, rgba(34, 18, 9, 0.58) 100%);
+      }
+
+      #bgEmbers {
+        position: absolute;
+        inset: 0;
+      }
+
+      #bgSmokeWisps {
+        position: absolute;
+        inset: 0;
+      }
+
+      #bgSmokeWisps::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        background:
+          radial-gradient(120vw 80vh at 50% 78%, rgba(138, 98, 78, 0.2) 0%, rgba(138, 98, 78, 0) 74%),
+          linear-gradient(180deg, rgba(110, 78, 63, 0.06) 0%, rgba(80, 56, 45, 0.14) 100%);
+        opacity: 0.4;
+        filter: blur(16px);
+        animation: smokeDrift 26s ease-in-out infinite alternate;
+      }
+
+      .smoke-wisp {
+        position: absolute;
+        bottom: -24vh;
+        width: var(--wisp-width, 130px);
+        height: var(--wisp-height, 68px);
+        border-radius: var(--wisp-shape, 58% 42% 64% 36% / 46% 54% 42% 58%);
+        background:
+          radial-gradient(76% 58% at 24% 52%, rgba(245, 206, 182, 0.48) 0%, rgba(186, 151, 132, 0.28) 54%, rgba(62, 50, 44, 0) 100%),
+          radial-gradient(62% 48% at 72% 56%, rgba(223, 180, 159, 0.38) 0%, rgba(148, 117, 104, 0.24) 58%, rgba(58, 45, 40, 0) 100%),
+          radial-gradient(94% 72% at 46% 50%, rgba(144, 112, 101, 0.28) 0%, rgba(88, 69, 61, 0.16) 62%, rgba(45, 35, 31, 0) 100%);
+        mix-blend-mode: screen;
+        opacity: 0;
+        will-change: transform, filter, margin-left, opacity;
+        transform-origin: 52% 56%;
+        animation:
+          smokeWispRise var(--wisp-rise-duration, 17s) linear var(--wisp-delay, 0s) infinite,
+          smokeWispSway var(--wisp-sway-duration, 5.4s) ease-in-out var(--wisp-sway-delay, 0s) infinite,
+          smokeWispMicroDrift var(--micro-drift-duration, 4.6s) ease-in-out var(--micro-drift-delay, 0s) infinite,
+          smokeWispTwist var(--wisp-twist-duration, 6.2s) ease-in-out var(--wisp-twist-delay, 0s) infinite;
+      }
+
+      .smoke-wisp::before,
+      .smoke-wisp::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: inherit;
+        pointer-events: none;
+      }
+
+      .smoke-wisp::before {
+        background:
+          radial-gradient(68% 52% at 30% 46%, rgba(242, 214, 194, 0.34) 0%, rgba(187, 152, 136, 0.16) 58%, rgba(62, 47, 41, 0) 100%),
+          radial-gradient(52% 44% at 78% 58%, rgba(202, 167, 150, 0.28) 0%, rgba(131, 103, 92, 0.14) 60%, rgba(54, 43, 38, 0) 100%);
+        mix-blend-mode: screen;
+        animation: smokeWispShear var(--wisp-shear-duration, 4.8s) ease-in-out var(--wisp-shear-delay, 0s) infinite;
+      }
+
+      .smoke-wisp::after {
+        background:
+          radial-gradient(84% 66% at 52% 50%, rgba(102, 80, 71, 0.24) 0%, rgba(64, 50, 45, 0.08) 66%, rgba(40, 31, 27, 0) 100%);
+        filter: blur(4px);
+        opacity: 0.86;
+      }
+
+      .smoke-wisp.layer-near {
+        --wisp-opacity-scale: 1.14;
+        --wisp-blur-min: 7px;
+        --wisp-blur-max: 14px;
+      }
+
+      .smoke-wisp.layer-mid {
+        --wisp-opacity-scale: 0.98;
+        --wisp-blur-min: 10px;
+        --wisp-blur-max: 18px;
+      }
+
+      .smoke-wisp.layer-far {
+        --wisp-opacity-scale: 0.8;
+        --wisp-blur-min: 14px;
+        --wisp-blur-max: 24px;
+      }
+
+      .bg-ember {
+        position: absolute;
+        bottom: -16vh;
+        width: var(--ember-size, 5px);
+        height: calc(var(--ember-size, 5px) * 1.34);
+        border-radius: 999px;
+        background: radial-gradient(circle at 55% 40%, var(--ember-core, rgba(255, 252, 238, 1)) 0%, var(--ember-mid, rgba(255, 142, 68, 0.96)) 38%, rgba(255, 54, 20, 0.12) 100%);
+        box-shadow:
+          0 0 14px rgba(255, 174, 122, 0.96),
+          0 0 32px rgba(255, 94, 40, 0.8),
+          0 0 50px rgba(255, 40, 12, 0.56);
+        opacity: 0;
+        animation:
+          emberRise var(--rise-duration, 8.5s) linear var(--rise-delay, 0s) infinite,
+          emberTwinkle var(--twinkle-duration, 2.4s) ease-in-out var(--twinkle-delay, 0s) infinite;
+      }
+
+      .bg-ember.bg-ember-bright {
+        --ember-core: rgba(255, 255, 247, 1);
+        --ember-mid: rgba(255, 166, 78, 1);
+        box-shadow:
+          0 0 18px rgba(255, 220, 168, 1),
+          0 0 42px rgba(255, 130, 52, 0.96),
+          0 0 68px rgba(255, 52, 16, 0.74);
+      }
+
+      body.reduced-motion .forge-smoke,
+      body.reduced-motion .forge-flame,
+      body.reduced-motion .bg-ember,
+      body.reduced-motion .smoke-wisp {
+        animation: none !important;
+      }
+
+      body.reduced-motion .smoke-wisp::before,
+      body.reduced-motion .smoke-wisp::after {
+        animation: none !important;
+      }
+
+      body.reduced-motion #bgSmokeWisps::before {
+        animation: none !important;
+      }
+
+      body.reduced-motion .forge-smoke {
+        opacity: 0.32;
+        transform: none;
+      }
+
+      body.reduced-motion .forge-flame {
+        opacity: 0.42;
       }
       textarea {
         appearance: none;
@@ -155,7 +494,7 @@
         color: rgba(255, 217, 0, 0.28);
       }
       .focus-ring:focus-within {
-        box-shadow: 0 0 0 1px rgba(255, 217, 0, 0.35), 0 0 22px rgba(255, 217, 0, 0.12);
+        box-shadow: none;
       }
       .btn {
         transition: transform 120ms ease, background-color 120ms ease, border-color 120ms ease;
@@ -167,14 +506,143 @@
         display: flex;
         justify-content: center;
         align-items: center;
-        padding: 0 3rem 0;
-        margin-top: 3rem;
+        padding: 0 1rem 0;
+        margin-top: 5rem;
       }
       .app-logo {
-        width: min(100%, 720px);
+        width: min(100%, 1300px);
         height: auto;
         opacity: 0.96;
-        filter: drop-shadow(0 0 18px rgba(255, 255, 255, 0.12));
+        filter: drop-shadow(0 0 22px rgba(255, 255, 255, 0.16));
+      }
+      .landing-shell {
+        min-height: clamp(540px, 74vh, 740px);
+        display: grid;
+        grid-template-columns: minmax(0, 1.08fr) minmax(280px, 0.92fr);
+        gap: clamp(1.4rem, 4vw, 3rem);
+        align-items: center;
+        padding: clamp(2.2rem, 6vh, 4.6rem) clamp(1.4rem, 3vw, 2.8rem);
+      }
+      .landing-copy-wrap {
+        max-width: 640px;
+      }
+      .landing-logo {
+        width: clamp(210px, 30vw, 360px);
+        height: auto;
+        opacity: 0.95;
+        margin-bottom: 1.2rem;
+        filter: drop-shadow(0 0 16px rgba(255, 222, 138, 0.2));
+      }
+      .landing-kicker {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.55rem;
+        padding: 0.3rem 0.65rem;
+        border-radius: 999px;
+        border: 1px solid rgba(255, 217, 0, 0.26);
+        background: rgba(255, 217, 0, 0.08);
+        color: rgba(255, 236, 140, 0.95);
+        font-size: 10px;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        font-weight: 700;
+      }
+      .landing-title {
+        margin-top: 1.1rem;
+        font-size: clamp(2.2rem, 6.4vw, 5.2rem);
+        line-height: 0.93;
+        letter-spacing: -0.02em;
+        color: rgba(248, 250, 252, 0.98);
+      }
+      .landing-title-em {
+        color: rgba(255, 225, 133, 0.98);
+        font-style: italic;
+      }
+      .landing-subtext {
+        margin-top: 1.35rem;
+        max-width: 560px;
+        color: rgba(226, 232, 240, 0.86);
+        font-size: clamp(1rem, 1.45vw, 1.32rem);
+        line-height: 1.5;
+      }
+      .landing-actions {
+        margin-top: 1.8rem;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.85rem;
+      }
+      .landing-btn {
+        min-height: 44px;
+        border-radius: 0.35rem;
+        padding: 0.68rem 1.2rem;
+        letter-spacing: 0.08em;
+        font-size: 11px;
+        font-family: "JetBrains Mono", monospace;
+        text-transform: uppercase;
+        border: 1px solid transparent;
+        transition: transform 140ms ease, box-shadow 180ms ease, background-color 140ms ease, border-color 140ms ease;
+      }
+      .landing-btn:active {
+        transform: translateY(1px);
+      }
+      .landing-btn-primary {
+        background: linear-gradient(180deg, rgba(255, 224, 116, 0.98), rgba(239, 180, 58, 0.95));
+        color: rgba(40, 22, 8, 0.95);
+        border-color: rgba(255, 217, 0, 0.54);
+        box-shadow: 0 8px 20px rgba(255, 193, 59, 0.22);
+      }
+      .landing-btn-primary:hover {
+        box-shadow: 0 12px 24px rgba(255, 193, 59, 0.32);
+        filter: brightness(1.03);
+      }
+      .landing-btn-ghost {
+        background: rgba(8, 7, 4, 0.36);
+        color: rgba(255, 234, 164, 0.95);
+        border-color: rgba(255, 217, 0, 0.22);
+      }
+      .landing-btn-ghost:hover {
+        border-color: rgba(255, 217, 0, 0.4);
+        background: rgba(10, 9, 4, 0.54);
+      }
+      .landing-preview {
+        width: min(100%, 420px);
+        justify-self: end;
+        border-radius: 0.9rem;
+        border: 1px solid rgba(255, 217, 0, 0.2);
+        background: linear-gradient(165deg, rgba(14, 12, 6, 0.82), rgba(8, 7, 4, 0.5));
+        box-shadow: 0 20px 42px rgba(2, 2, 2, 0.46);
+        overflow: hidden;
+      }
+      .landing-preview-head {
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+        padding: 0.7rem 0.8rem;
+        border-bottom: 1px solid rgba(255, 217, 0, 0.14);
+        background: rgba(255, 217, 0, 0.03);
+      }
+      .landing-preview-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+        background: rgba(255, 217, 0, 0.35);
+      }
+      .landing-preview-code {
+        margin: 0;
+        padding: 1rem 1rem 1.2rem;
+        font-family: "JetBrains Mono", monospace;
+        color: rgba(226, 232, 240, 0.88);
+        font-size: 12px;
+        line-height: 1.65;
+      }
+      .landing-preview-code .comment {
+        color: rgba(255, 236, 140, 0.72);
+      }
+      .landing-preview-code .kw {
+        color: rgba(255, 217, 0, 0.94);
+      }
+      .landing-preview-code .str {
+        color: rgba(167, 243, 208, 0.95);
       }
       pre {
         white-space: pre-wrap;
@@ -349,8 +817,8 @@
         align-items: center;
         padding: 0.08rem 0.45rem;
         border-radius: 999px;
-        border: 1px solid rgba(125, 211, 252, 0.28);
-        background: rgba(125, 211, 252, 0.08);
+        border: 1px solid rgba(255, 217, 0, 0.28);
+        background: rgba(255, 217, 0, 0.08);
         color: rgba(186, 230, 253, 0.96);
         font-size: 10px;
         letter-spacing: 0.08em;
@@ -463,10 +931,8 @@
         border-radius: 999px;
       }
       .cheat-float {
-        box-shadow: inset 0 0 0 1px rgba(255, 217, 0, 0.08), 0 12px 24px rgba(0, 0, 0, 0.22);
-        background:
-          radial-gradient(120% 70% at 12% 4%, rgba(255, 217, 0, 0.08), rgba(255, 217, 0, 0) 58%),
-          linear-gradient(180deg, rgba(8, 7, 4, 0.58) 0%, rgba(8, 7, 4, 0.3) 100%);
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.22);
+        background: linear-gradient(180deg, rgba(8, 7, 4, 0.58) 0%, rgba(8, 7, 4, 0.3) 100%);
         letter-spacing: 0.01em;
       }
       .cheat-grid {
@@ -498,7 +964,7 @@
         --cheat-accent: rgba(52, 211, 153, 0.82);
       }
       .cheat-group-control {
-        --cheat-accent: rgba(125, 211, 252, 0.84);
+        --cheat-accent: rgba(255, 217, 0, 0.84);
       }
       .cheat-group-ops {
         --cheat-accent: rgba(251, 146, 60, 0.84);
@@ -543,6 +1009,25 @@
         color: rgba(226, 232, 240, 0.88);
       }
 
+      .ast-canvas {
+        position: relative;
+        isolation: isolate;
+        background:
+          radial-gradient(78% 58% at 50% 0%, rgba(255, 217, 0, 0.08) 0%, rgba(255, 217, 0, 0) 70%),
+          linear-gradient(180deg, rgba(5, 5, 3, 0.92) 0%, rgba(3, 3, 2, 0.98) 100%);
+      }
+      .ast-canvas::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background:
+          radial-gradient(68% 54% at 16% 14%, rgba(245, 158, 11, 0.08) 0%, rgba(245, 158, 11, 0) 62%),
+          radial-gradient(60% 50% at 86% 84%, rgba(52, 211, 153, 0.07) 0%, rgba(52, 211, 153, 0) 62%),
+          linear-gradient(180deg, rgba(0, 0, 0, 0) 30%, rgba(0, 0, 0, 0.22) 100%);
+        z-index: 0;
+      }
+
       .ast-graph-viewport {
         position: relative;
         overflow: hidden;
@@ -558,16 +1043,28 @@
         position: absolute;
         inset: 0;
         pointer-events: none;
-        opacity: 0.22;
+        opacity: 0.34;
         background-image:
-          repeating-linear-gradient(to right, rgba(255, 217, 0, 0.08) 0 1px, transparent 1px 44px),
-          repeating-linear-gradient(to bottom, rgba(255, 217, 0, 0.07) 0 1px, transparent 1px 44px);
+          repeating-linear-gradient(to right, rgba(255, 217, 0, 0.09) 0 1px, transparent 1px 42px),
+          repeating-linear-gradient(to bottom, rgba(255, 217, 0, 0.08) 0 1px, transparent 1px 42px);
+      }
+      .ast-graph-viewport::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background:
+          radial-gradient(58% 42% at 50% 50%, rgba(255, 217, 0, 0.08) 0%, rgba(255, 217, 0, 0) 74%),
+          linear-gradient(180deg, rgba(255, 217, 0, 0.04) 0%, rgba(255, 217, 0, 0) 28%, rgba(255, 217, 0, 0.04) 100%);
+        opacity: 0.48;
       }
       .ast-graph-svg {
         width: 100%;
         height: 100%;
         display: block;
         cursor: default;
+        position: relative;
+        z-index: 1;
       }
       .ast-link {
         fill: none;
@@ -624,8 +1121,8 @@
         fill: rgba(167, 243, 208, 0.95);
       }
       .ast-node-card.ast-identifier {
-        fill: rgba(125, 211, 252, 0.16);
-        stroke: rgba(125, 211, 252, 0.84);
+        fill: rgba(255, 217, 0, 0.16);
+        stroke: rgba(255, 217, 0, 0.84);
       }
       .ast-node-title.ast-identifier {
         fill: rgba(186, 230, 253, 0.95);
@@ -638,8 +1135,8 @@
         fill: rgba(255, 220, 196, 0.95);
       }
       .ast-node-card.ast-control {
-        fill: rgba(125, 211, 252, 0.16);
-        stroke: rgba(125, 211, 252, 0.84);
+        fill: rgba(255, 217, 0, 0.16);
+        stroke: rgba(255, 217, 0, 0.84);
       }
       .ast-node-title.ast-control {
         fill: rgba(186, 230, 253, 0.95);
@@ -675,45 +1172,130 @@
       }
 
       @media (max-width: 1100px) {
+        .landing-shell {
+          grid-template-columns: minmax(0, 1fr);
+          min-height: auto;
+          padding: 1.4rem 1.05rem 1.7rem;
+          gap: 1.2rem;
+        }
+        .landing-preview {
+          justify-self: stretch;
+          width: 100%;
+        }
+        .landing-title {
+          font-size: clamp(2.2rem, 13vw, 3.8rem);
+        }
+        .landing-logo {
+          width: clamp(190px, 56vw, 300px);
+          margin-bottom: 1rem;
+        }
         .cheat-grid {
           grid-template-columns: minmax(0, 1fr) 20px minmax(0, 0.9fr);
           gap: 0.2rem;
         }
       }
+
+      @media (prefers-reduced-motion: reduce) {
+        .forge-smoke,
+        .forge-flame,
+        .bg-ember,
+        .smoke-wisp {
+          animation: none !important;
+        }
+      }
     </style>
   </head>
-  <body class="font-display text-slate-100 antialiased selection:bg-primary/30 px-4 pt-0 pb-4">
-    <div class="w-full max-w-[1320px] mx-auto flex flex-col gap-4">
+  <body class="font-display text-slate-100 antialiased selection:bg-primary/30 px-4 pt-5 pb-4">
+    <div id="bgForge" aria-hidden="true">
+      <div class="forge-layer forge-base"></div>
+      <div class="forge-layer forge-smoke"></div>
+      <div class="forge-layer" id="bgSmokeWisps"></div>
+      <div class="forge-layer forge-flame"></div>
+      <div class="forge-layer" id="bgEmbers"></div>
+      <div class="forge-layer forge-vignette"></div>
+    </div>
+
+    <div id="transitionVeil" aria-hidden="true"></div>
+
+    <div class="app-shell w-full max-w-[1320px] mx-auto flex flex-col gap-4">
+      <section id="landingView" class="w-full rounded-3xl glass-effect" aria-label="WesterosScript landing">
+        <div class="landing-shell">
+          <div class="landing-copy-wrap">
+            <img src="APP-logo.png" alt="Westeros Script" class="landing-logo" />
+            <span class="landing-kicker">
+              <span class="material-symbols-outlined text-[14px] leading-none">local_fire_department</span>
+              Citadel Prelude
+            </span>
+            <h1 class="landing-title font-display">
+              Forge the
+              <span class="landing-title-em">Realm's</span>
+              Logic
+            </h1>
+            <p class="landing-subtext font-display">
+              A Game of Thrones inspired programming language for the modern Maester. Codify the laws of the Seven
+              Kingdoms with ironclad syntax.
+            </p>
+            <div class="landing-actions">
+              <button
+                id="beginInscriptionBtn"
+                class="landing-btn landing-btn-primary"
+                type="button"
+                aria-label="Begin the Inscription"
+              >
+                Begin the Inscription
+              </button>
+            </div>
+          </div>
+
+          <aside class="landing-preview" aria-label="WesterosScript code preview">
+            <div class="landing-preview-head" aria-hidden="true">
+              <span class="landing-preview-dot"></span>
+              <span class="landing-preview-dot"></span>
+              <span class="landing-preview-dot"></span>
+            </div>
+            <pre class="landing-preview-code"><span class="comment">// Declare the Iron Bank reserves</span>
+<span class="kw">coin</span> gold claims 100!
+
+council gold less_than 50 then
+  raven <span class="str">"The debt must be paid"</span>!
+end</pre>
+          </aside>
+        </div>
+      </section>
+
+      <div id="workspaceView" class="hidden flex flex-col gap-4" aria-label="Compiler workspace">
       <div class="app-logo-wrap">
         <img src="APP-logo.png" alt="Westeros Script" class="app-logo" />
       </div>
 
-      <div class="flex flex-col lg:flex-row lg:items-start lg:justify-center gap-6">
-      <aside class="w-full lg:flex-none lg:w-[360px] lg:h-[680px] rounded-2xl glass-effect shadow-[0_0_40px_rgba(255,217,0,0.16),inset_0_0_24px_rgba(255,217,0,0.06)] overflow-hidden">
+      <section class="w-full rounded-3xl glass-effect p-4 lg:p-5">
+        <div class="grid grid-cols-1 gap-6 lg:grid-cols-[360px_minmax(0,1fr)_280px] lg:items-stretch">
+      <aside class="w-full min-h-[320px] lg:h-[680px] rounded-2xl border border-primary/20 bg-black/20 overflow-hidden">
         <div class="h-full flex flex-col">
           <div class="h-[52px] flex items-center px-5 border-b border-primary/20 bg-primary/5">
             <div class="flex items-center gap-2">
               <span class="material-symbols-outlined text-primary text-sm leading-none">account_tree</span>
-              <span class="text-[10px] font-bold tracking-[0.2em] text-primary/80 uppercase">AST Viewer</span>
+              <span class="text-[10px] font-bold tracking-[0.2em] text-yellow-200 uppercase">AST Viewer</span>
             </div>
           </div>
           <div class="flex-1 p-6 overflow-hidden">
             <div class="cheat-float ast-canvas h-full rounded-lg border border-primary/20 bg-black/30 overflow-hidden custom-scrollbar" id="astViewerPane">
-              <div class="ast-empty">Parse a program to view the Abstract Syntax Tree</div>
+              <div class="ast-graph-viewport" id="astGraphViewport">
+                <svg class="ast-graph-svg" id="astGraphSvg" aria-hidden="true"></svg>
+              </div>
             </div>
           </div>
         </div>
       </aside>
 
-      <div class="relative w-full max-w-[560px] flex flex-col gap-6 lg:flex-none lg:h-[680px]">
-        <div class="relative">
+      <div class="w-full min-w-0 flex flex-col gap-6 lg:h-[680px]">
         <div
-          class="w-full h-[300px] lg:h-[306px] flex flex-col rounded-2xl glass-effect shadow-[0_0_40px_rgba(255,217,0,0.18),inset_0_0_26px_rgba(255,217,0,0.06)] overflow-hidden"
+          class="w-full h-[300px] lg:h-[306px] flex flex-col rounded-2xl border border-primary/20 bg-black/20 overflow-hidden"
         >
           <div class="h-[52px] flex items-center justify-between px-5 bg-primary/5 border-b border-primary/20">
             <div class="flex items-center gap-2">
               <span class="material-symbols-outlined text-primary text-sm">auto_fix_high</span>
-              <span class="text-[10px] font-bold tracking-[0.2em] text-primary/70 uppercase">Westeros Compiler</span>
+              <span class="text-[10px] font-bold tracking-[0.2em] text-yellow-200 uppercase">Westeros Compiler</span>
             </div>
 
             <div class="flex items-center gap-2">
@@ -752,9 +1334,8 @@ raven gold!
             </div>
           </div>
         </div>
-      </div>
 
-      <div class="w-full h-[350px] rounded-2xl glass-effect shadow-[0_0_40px_rgba(255,217,0,0.16),inset_0_0_24px_rgba(255,217,0,0.06)] overflow-hidden">
+      <div class="w-full h-[350px] lg:flex-1 rounded-2xl border border-primary/20 bg-black/20 overflow-hidden">
         <div class="h-full overflow-hidden p-6">
           <div class="h-full rounded-lg border border-primary/20 bg-black/30 overflow-hidden flex flex-col">
             <div class="flex border-b border-primary/10 px-4 bg-black/10 overflow-x-auto">
@@ -782,12 +1363,12 @@ raven gold!
       </div>
       </div>
 
-      <aside class="w-full lg:flex-none lg:w-[280px] lg:h-[680px] rounded-2xl glass-effect shadow-[0_0_40px_rgba(255,217,0,0.16),inset_0_0_24px_rgba(255,217,0,0.06)] overflow-hidden">
+      <aside class="w-full min-h-[320px] lg:h-[680px] rounded-2xl border border-primary/20 bg-black/20 overflow-hidden">
         <div class="h-full flex flex-col">
           <div class="h-[52px] flex items-center px-5 border-b border-primary/20 bg-primary/5">
             <div class="flex items-center gap-2">
               <span class="material-symbols-outlined text-primary text-sm leading-none">menu_book</span>
-              <span class="text-[10px] font-bold tracking-[0.2em] text-primary/80 uppercase">Cheat Sheet</span>
+              <span class="text-[10px] font-bold tracking-[0.2em] text-yellow-200 uppercase">Cheat Sheet</span>
             </div>
           </div>
 
@@ -845,7 +1426,10 @@ raven gold!
           </div>
         </div>
       </aside>
-      </div>
+        </div>
+      </section>
+    </div>
+
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
@@ -861,6 +1445,10 @@ raven gold!
       const tabSemantic = document.getElementById("tabSemantic");
       const tabOutput = document.getElementById("tabOutput");
       const tabLedger = document.getElementById("tabLedger");
+      const landingView = document.getElementById("landingView");
+      const workspaceView = document.getElementById("workspaceView");
+      const transitionVeil = document.getElementById("transitionVeil");
+      const beginInscriptionBtn = document.getElementById("beginInscriptionBtn");
       const tabButtons = [tabLexical, tabSyntax, tabSemantic, tabLedger, tabOutput];
 
       let lastResult = {
@@ -877,6 +1465,254 @@ raven gold!
       let astGraphState = {
         resizeObserver: null,
       };
+      let isViewTransitioning = false;
+
+      const bgEmbers = document.getElementById("bgEmbers");
+      const bgSmokeWisps = document.getElementById("bgSmokeWisps");
+      const reducedMotionMedia = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+      function randomBetween(min, max) {
+        return min + Math.random() * (max - min);
+      }
+
+      function delayMs(ms) {
+        return new Promise((resolve) => setTimeout(resolve, ms));
+      }
+
+      function applyMotionMode() {
+        document.body.classList.toggle("reduced-motion", reducedMotionMedia.matches);
+      }
+
+      function buildForgeEmbers() {
+        if (!bgEmbers) return;
+
+        const emberCount = reducedMotionMedia.matches ? 12 : 54;
+        bgEmbers.innerHTML = "";
+
+        for (let i = 0; i < emberCount; i += 1) {
+          const ember = document.createElement("span");
+          const isBrightEmber = !reducedMotionMedia.matches && Math.random() < 0.62;
+          ember.className = isBrightEmber ? "bg-ember bg-ember-bright" : "bg-ember";
+
+          const left = randomBetween(3, 97);
+          const rise = randomBetween(26, 82);
+          const drift = randomBetween(-30, 32);
+          const size = randomBetween(3.4, 9.2);
+          const riseDuration = randomBetween(4.4, 9.2);
+          const riseDelay = randomBetween(-9, 0);
+          const twinkleDuration = isBrightEmber ? randomBetween(0.55, 1.5) : randomBetween(0.9, 2.8);
+          const twinkleDelay = randomBetween(-3.2, 0);
+          const alpha = isBrightEmber ? randomBetween(0.96, 1) : randomBetween(0.74, 1);
+
+          ember.style.left = `${left.toFixed(2)}%`;
+          ember.style.setProperty("--ember-rise", `${rise.toFixed(2)}vh`);
+          ember.style.setProperty("--ember-drift", `${drift.toFixed(2)}px`);
+          ember.style.setProperty("--ember-size", `${size.toFixed(2)}px`);
+          ember.style.setProperty("--rise-duration", `${riseDuration.toFixed(2)}s`);
+          ember.style.setProperty("--rise-delay", `${riseDelay.toFixed(2)}s`);
+          ember.style.setProperty("--twinkle-duration", `${twinkleDuration.toFixed(2)}s`);
+          ember.style.setProperty("--twinkle-delay", `${twinkleDelay.toFixed(2)}s`);
+          ember.style.setProperty("--ember-alpha", `${alpha.toFixed(2)}`);
+
+          bgEmbers.appendChild(ember);
+        }
+      }
+
+      function buildForgeSmokeWisps() {
+        if (!bgSmokeWisps) return;
+
+        const wispCount = reducedMotionMedia.matches ? 8 : 42;
+        bgSmokeWisps.innerHTML = "";
+
+        for (let i = 0; i < wispCount; i += 1) {
+          const wisp = document.createElement("span");
+          const depthRoll = Math.random();
+          let depthClass = "layer-mid";
+          if (depthRoll < 0.34) depthClass = "layer-near";
+          else if (depthRoll > 0.86) depthClass = "layer-far";
+          wisp.className = `smoke-wisp ${depthClass}`;
+
+          const left = randomBetween(2, 96);
+          const isNear = depthClass === "layer-near";
+          const isFar = depthClass === "layer-far";
+          const width = isNear ? randomBetween(140, 290) : isFar ? randomBetween(170, 310) : randomBetween(150, 280);
+          const height = isNear ? randomBetween(72, 152) : isFar ? randomBetween(92, 170) : randomBetween(82, 156);
+          const rise = isNear ? randomBetween(48, 90) : isFar ? randomBetween(52, 92) : randomBetween(50, 92);
+          const drift = isNear ? randomBetween(-78, 82) : isFar ? randomBetween(-42, 44) : randomBetween(-62, 64);
+          const opacityBase = isNear ? randomBetween(0.34, 0.58) : isFar ? randomBetween(0.16, 0.32) : randomBetween(0.24, 0.44);
+          const opacityScale = isNear ? 1.14 : isFar ? 0.8 : 0.98;
+          const opacity = Math.min(0.72, opacityBase * opacityScale);
+          const riseDuration = isNear ? randomBetween(8.5, 13.5) : isFar ? randomBetween(13, 19) : randomBetween(10, 16);
+          const delay = randomBetween(-24, 0);
+          const swayDuration = isNear ? randomBetween(2.2, 4.1) : isFar ? randomBetween(3.4, 5.8) : randomBetween(2.6, 4.8);
+          const swayDelay = randomBetween(-4.5, 0);
+          const microDrift = isNear ? randomBetween(18, 34) : isFar ? randomBetween(10, 20) : randomBetween(14, 28);
+          const microDriftDuration = isNear ? randomBetween(1.6, 3) : isFar ? randomBetween(2.6, 4.6) : randomBetween(1.9, 3.6);
+          const microDriftDelay = randomBetween(-6, 0);
+          const tiltA = randomBetween(-14, 3);
+          const tiltB = tiltA + randomBetween(8, 18);
+          const stretchA = randomBetween(0.9, 1.02);
+          const stretchB = randomBetween(1.08, 1.28);
+          const twistDuration = isNear ? randomBetween(3.2, 5.6) : isFar ? randomBetween(4.8, 8.2) : randomBetween(3.8, 6.6);
+          const twistDelay = randomBetween(-7, 0);
+          const shearDuration = isNear ? randomBetween(2.8, 4.8) : isFar ? randomBetween(4.2, 6.8) : randomBetween(3.2, 5.6);
+          const shearDelay = randomBetween(-6, 0);
+          const shape = `${randomBetween(44, 68).toFixed(0)}% ${randomBetween(32, 56).toFixed(0)}% ${randomBetween(46, 70).toFixed(0)}% ${randomBetween(30, 54).toFixed(0)}% / ${randomBetween(36, 58).toFixed(0)}% ${randomBetween(42, 66).toFixed(0)}% ${randomBetween(34, 58).toFixed(0)}% ${randomBetween(40, 66).toFixed(0)}%`;
+
+          wisp.style.left = `${left.toFixed(2)}%`;
+          wisp.style.setProperty("--wisp-width", `${width.toFixed(2)}px`);
+          wisp.style.setProperty("--wisp-height", `${height.toFixed(2)}px`);
+          wisp.style.setProperty("--wisp-rise", `${rise.toFixed(2)}vh`);
+          wisp.style.setProperty("--wisp-drift", `${drift.toFixed(2)}px`);
+          wisp.style.setProperty("--wisp-opacity", `${opacity.toFixed(2)}`);
+          wisp.style.setProperty("--wisp-rise-duration", `${riseDuration.toFixed(2)}s`);
+          wisp.style.setProperty("--wisp-delay", `${delay.toFixed(2)}s`);
+          wisp.style.setProperty("--wisp-sway-duration", `${swayDuration.toFixed(2)}s`);
+          wisp.style.setProperty("--wisp-sway-delay", `${swayDelay.toFixed(2)}s`);
+          wisp.style.setProperty("--micro-drift", `${microDrift.toFixed(2)}px`);
+          wisp.style.setProperty("--micro-drift-duration", `${microDriftDuration.toFixed(2)}s`);
+          wisp.style.setProperty("--micro-drift-delay", `${microDriftDelay.toFixed(2)}s`);
+          wisp.style.setProperty("--wisp-tilt-a", `${tiltA.toFixed(2)}deg`);
+          wisp.style.setProperty("--wisp-tilt-b", `${tiltB.toFixed(2)}deg`);
+          wisp.style.setProperty("--wisp-stretch-a", `${stretchA.toFixed(2)}`);
+          wisp.style.setProperty("--wisp-stretch-b", `${stretchB.toFixed(2)}`);
+          wisp.style.setProperty("--wisp-twist-duration", `${twistDuration.toFixed(2)}s`);
+          wisp.style.setProperty("--wisp-twist-delay", `${twistDelay.toFixed(2)}s`);
+          wisp.style.setProperty("--wisp-shear-duration", `${shearDuration.toFixed(2)}s`);
+          wisp.style.setProperty("--wisp-shear-delay", `${shearDelay.toFixed(2)}s`);
+          wisp.style.setProperty("--wisp-shape", shape);
+
+          bgSmokeWisps.appendChild(wisp);
+        }
+      }
+
+      function initForgeBackground() {
+        applyMotionMode();
+        buildForgeSmokeWisps();
+        buildForgeEmbers();
+      }
+
+      function waitForAnimation(animation) {
+        if (!animation) return Promise.resolve();
+        if (animation.finished && typeof animation.finished.then === "function") {
+          return animation.finished.catch(() => {});
+        }
+        return new Promise((resolve) => {
+          animation.addEventListener("finish", resolve, { once: true });
+          animation.addEventListener("cancel", resolve, { once: true });
+        });
+      }
+
+      async function revealWorkspace() {
+        if (!landingView || !workspaceView) return;
+        if (isViewTransitioning) return;
+        if (landingView.classList.contains("hidden")) {
+          requestAnimationFrame(() => editor.focus());
+          return;
+        }
+
+        const useReducedMotion = reducedMotionMedia.matches;
+        const canAnimate =
+          typeof landingView.animate === "function" &&
+          typeof workspaceView.animate === "function" &&
+          !!transitionVeil &&
+          typeof transitionVeil.animate === "function";
+
+        const activateWorkspaceInstant = () => {
+          if (transitionVeil) transitionVeil.style.opacity = "0";
+          landingView.classList.add("hidden");
+          workspaceView.classList.remove("hidden");
+          document.body.classList.remove("landing-active");
+          workspaceView.style.opacity = "";
+          workspaceView.style.transform = "";
+
+          requestAnimationFrame(() => {
+            syncOverlay();
+            syncScroll();
+            setTab(activeTab || "lexical");
+            if (editor) editor.focus();
+          });
+        };
+
+        if (useReducedMotion || !canAnimate) {
+          activateWorkspaceInstant();
+          return;
+        }
+
+        isViewTransitioning = true;
+
+        try {
+          const landingOut = landingView.animate(
+            [
+              { opacity: 1, transform: "translateY(0px) scale(1)", filter: "blur(0px)" },
+              { opacity: 0, transform: "translateY(-18px) scale(0.986)", filter: "blur(5px)" },
+            ],
+            {
+              duration: 380,
+              easing: "cubic-bezier(0.34, 0.74, 0.08, 1)",
+              fill: "forwards",
+            },
+          );
+
+          const veilIn = transitionVeil.animate(
+            [{ opacity: 0 }, { opacity: 0.5 }],
+            {
+              duration: 250,
+              easing: "cubic-bezier(0.33, 0.74, 0, 1)",
+              fill: "forwards",
+            },
+          );
+
+          await Promise.all([waitForAnimation(landingOut), waitForAnimation(veilIn)]);
+
+          document.body.classList.remove("landing-active");
+          landingView.classList.add("hidden");
+          workspaceView.classList.remove("hidden");
+          workspaceView.style.opacity = "0";
+          workspaceView.style.transform = "translateY(16px) scale(0.992)";
+
+          const workspaceIn = workspaceView.animate(
+            [
+              { opacity: 0, transform: "translateY(16px) scale(0.992)" },
+              { opacity: 1, transform: "translateY(0px) scale(1)" },
+            ],
+            {
+              duration: 460,
+              easing: "cubic-bezier(0.2, 0.72, 0.06, 1)",
+              fill: "forwards",
+            },
+          );
+
+          const veilOut = transitionVeil.animate(
+            [{ opacity: 0.5 }, { opacity: 0 }],
+            {
+              duration: 330,
+              easing: "cubic-bezier(0.4, 0.22, 0.2, 1)",
+              fill: "forwards",
+            },
+          );
+
+          await Promise.all([waitForAnimation(workspaceIn), waitForAnimation(veilOut)]);
+
+          workspaceView.style.opacity = "";
+          workspaceView.style.transform = "";
+
+          requestAnimationFrame(() => {
+            syncOverlay();
+            syncScroll();
+            setTab(activeTab || "lexical");
+            editor.focus();
+          });
+        } finally {
+          isViewTransitioning = false;
+        }
+      }
+
+      if (typeof reducedMotionMedia.addEventListener === "function") {
+        reducedMotionMedia.addEventListener("change", initForgeBackground);
+      } else {
+        reducedMotionMedia.addListener(initForgeBackground);
+      }
 
       function escapeHtml(s) {
         return s
@@ -1241,29 +2077,11 @@ raven gold!
           type: "Program",
           statements: [
             {
-              type: "VarDecl",
-              type_name: "coin",
-              name: "gold",
-              initializer: { type: "Literal", value: 100 },
-              is_constant: false,
-            },
-            {
-              type: "Council",
-              branches: [
-                [
-                  {
-                    type: "Compare",
-                    left: { type: "Identifier", name: "gold" },
-                    op: "greater_than",
-                    right: { type: "Literal", value: 50 },
-                  },
-                  {
-                    type: "Block",
-                    statements: [{ type: "Raven", value: { type: "Identifier", name: "gold" } }],
-                  },
-                ],
-              ],
-              otherwise_block: null,
+              type: "Raven",
+              value: {
+                type: "Literal",
+                value: "Winter is coming",
+              },
             },
           ],
         };
@@ -1609,14 +2427,27 @@ raven gold!
         astGraphState = { resizeObserver };
       }
 
+      function renderAstPlaceholderGrid() {
+        astGraphCleanup();
+        astViewerPane.innerHTML = `
+          <div class="ast-graph-viewport" id="astGraphViewport">
+            <svg class="ast-graph-svg" id="astGraphSvg" aria-hidden="true"></svg>
+          </div>
+        `;
+      }
+
       function displayAST(astJson) {
         const parsed = astTryParseJson(astJson);
-        const astSource = parsed || astSampleTree();
+
+        if (!parsed) {
+          renderAstPlaceholderGrid();
+          return;
+        }
 
         astNodeSeq = 0;
-        const graphTree = astBuildGraphTree(astSource);
+        const graphTree = astBuildGraphTree(parsed);
         astRenderGraph(graphTree, {
-          isPlaceholder: !parsed,
+          isPlaceholder: false,
         });
       }
 
@@ -1675,7 +2506,21 @@ raven gold!
         output.innerHTML = formatTerminal("Summoning the Maesters...");
         try {
           await requestAnalysis();
+
+          const processingDelay = reducedMotionMedia.matches ? 0 : 260;
+
+          if (processingDelay > 0) {
+            output.innerHTML = formatTerminal("[STEP] The Citadel is charting the AST...");
+            await delayMs(processingDelay);
+          }
+
           displayAST(lastResult.ast);
+
+          if (processingDelay > 0) {
+            output.innerHTML = formatTerminal("[STEP] The Maesters are drafting the report...");
+            await delayMs(processingDelay);
+          }
+
           setTab(activeTab);
         } catch (e) {
           output.innerHTML = formatTerminal(String(e));
@@ -1686,6 +2531,7 @@ raven gold!
       }
 
       analyzeBtn.addEventListener("click", analyze);
+      if (beginInscriptionBtn) beginInscriptionBtn.addEventListener("click", revealWorkspace);
       for (const btn of tabButtons) {
         btn.addEventListener("keydown", (event) => {
           if (event.key === "Enter" || event.key === " ") {
@@ -1702,6 +2548,7 @@ raven gold!
       editor.addEventListener("input", syncOverlay);
       editor.addEventListener("scroll", syncScroll);
       window.addEventListener("load", () => {
+        document.body.classList.add("landing-active");
         // Ensure overlay is aligned with the textarea.
         editor.style.padding = "0";
         overlay.style.padding = "0";
@@ -1715,6 +2562,7 @@ raven gold!
         setTab("lexical");
 
         displayAST("");
+        initForgeBackground();
       });
     </script>
   </body>

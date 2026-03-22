@@ -21,9 +21,10 @@ def main() -> None:
         "WesterosScript ",
         index_html,
         js_api=api,
+        fullscreen=True,
         width=1024,
         height=768,
-        background_color="#0c0b05",
+        background_color="#1a1007",
     )
     webview.start()
 
