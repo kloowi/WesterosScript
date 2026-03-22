@@ -17,7 +17,7 @@ def main() -> None:
     index_html = (assets_dir / "index.html").as_uri()
 
     api = WesterosApi()
-    webview.create_window(
+    window = webview.create_window(
         "WesterosScript ",
         index_html,
         js_api=api,
@@ -26,6 +26,7 @@ def main() -> None:
         height=768,
         background_color="#1a1007",
     )
+    api.attach_window(window, webview.OPEN_DIALOG, webview.SAVE_DIALOG)
     webview.start()
 
 

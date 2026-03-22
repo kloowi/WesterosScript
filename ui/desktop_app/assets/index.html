@@ -1300,11 +1300,31 @@ end</pre>
 
             <div class="flex items-center gap-2">
               <button
-                id="analyzeBtn"
-                class="btn px-3 py-1 rounded border border-primary/30 bg-primary/10 hover:bg-primary/20 text-[10px] font-bold tracking-[0.2em] uppercase text-primary"
+                id="openBtn"
+                class="btn h-8 w-8 rounded border border-primary/30 bg-primary/10 hover:bg-primary/20 text-primary flex items-center justify-center"
                 type="button"
+                aria-label="Open file"
+                title="Open file"
               >
-                Run
+                <span class="material-symbols-outlined text-[16px] leading-none">folder_open</span>
+              </button>
+              <button
+                id="saveAsBtn"
+                class="btn h-8 w-8 rounded border border-primary/30 bg-primary/10 hover:bg-primary/20 text-primary flex items-center justify-center"
+                type="button"
+                aria-label="Save as"
+                title="Save as"
+              >
+                <span class="material-symbols-outlined text-[16px] leading-none">save</span>
+              </button>
+              <button
+                id="analyzeBtn"
+                class="btn h-8 w-8 rounded border border-primary/30 bg-primary/10 hover:bg-primary/20 text-primary flex items-center justify-center"
+                type="button"
+                aria-label="Run analysis"
+                title="Run analysis"
+              >
+                <span class="material-symbols-outlined text-[16px] leading-none">play_arrow</span>
               </button>
             </div>
           </div>
@@ -1434,7 +1454,10 @@ raven gold!
 
     <script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
     <script>
+      const openBtn = document.getElementById("openBtn");
+      const saveAsBtn = document.getElementById("saveAsBtn");
       const analyzeBtn = document.getElementById("analyzeBtn");
+      const fileStatus = document.getElementById("fileStatus");
       const editor = document.getElementById("editor");
       const output = document.getElementById("output");
       const overlay = document.getElementById("overlay");
@@ -1466,6 +1489,8 @@ raven gold!
         resizeObserver: null,
       };
       let isViewTransitioning = false;
+      let currentFilePath = "";
+      let currentFileName = "";
 
       const bgEmbers = document.getElementById("bgEmbers");
       const bgSmokeWisps = document.getElementById("bgSmokeWisps");
@@ -1477,6 +1502,18 @@ raven gold!
 
       function delayMs(ms) {
         return new Promise((resolve) => setTimeout(resolve, ms));
+      }
+
+      function hasPywebviewApi() {
+        return !!(window.pywebview && window.pywebview.api);
+      }
+
+      function updateFileStatus(name = "", path = "") {
+        currentFileName = name || "";
+        currentFilePath = path || "";
+        if (!fileStatus) return;
+        fileStatus.textContent = currentFileName || "Unsaved scroll";
+        fileStatus.title = currentFilePath || "Current file";
       }
 
       function applyMotionMode() {
@@ -2500,9 +2537,54 @@ raven gold!
         };
       }
 
+      function setEditorSource(sourceText) {
+        editor.value = String(sourceText || "").replaceAll("\r\n", "\n");
+        syncOverlay();
+        syncScroll();
+      }
+
+      async function openFileFromDialog() {
+        if (!hasPywebviewApi()) {
+          output.innerHTML = formatTerminal("[MAESTER WARNING] pywebview API not available yet. Please wait...");
+          return;
+        }
+        const res = await window.pywebview.api.open_file();
+        if (!res || res.canceled) {
+          output.innerHTML = formatTerminal("[MAESTER] Open canceled.");
+          return;
+        }
+        if (!res.ok) {
+          output.innerHTML = formatTerminal(`[FATAL BETRAYAL] ${String(res.message || "Unable to open file.")}`);
+          return;
+        }
+        setEditorSource(res.source);
+        updateFileStatus(res.name || "", res.path || "");
+        output.innerHTML = formatTerminal(`[MAESTER] Opened ${res.name || "scroll"}.`);
+      }
+
+      async function saveFileAsDialog() {
+        if (!hasPywebviewApi()) {
+          output.innerHTML = formatTerminal("[MAESTER WARNING] pywebview API not available yet. Please wait...");
+          return;
+        }
+        const suggested = currentFileName || "script.wss";
+        const res = await window.pywebview.api.save_file_as(editor.value, suggested);
+        if (!res || res.canceled) {
+          output.innerHTML = formatTerminal("[MAESTER] Save canceled.");
+          return;
+        }
+        if (!res.ok) {
+          output.innerHTML = formatTerminal(`[FATAL BETRAYAL] ${String(res.message || "Unable to save file.")}`);
+          return;
+        }
+        updateFileStatus(res.name || "", res.path || "");
+        output.innerHTML = formatTerminal(`[MAESTER] ${res.message || "Scroll saved."}`);
+      }
+
       async function analyze() {
         analyzeBtn.disabled = true;
-        analyzeBtn.textContent = "Running...";
+        analyzeBtn.title = "Running...";
+        analyzeBtn.innerHTML = '<span class="material-symbols-outlined text-[16px] leading-none">hourglass_top</span>';
         output.innerHTML = formatTerminal("Summoning the Maesters...");
         try {
           await requestAnalysis();
@@ -2526,11 +2608,14 @@ raven gold!
           output.innerHTML = formatTerminal(String(e));
         } finally {
           analyzeBtn.disabled = false;
-          analyzeBtn.textContent = "Run";
+          analyzeBtn.title = "Run analysis";
+          analyzeBtn.innerHTML = '<span class="material-symbols-outlined text-[16px] leading-none">play_arrow</span>';
         }
       }
 
       analyzeBtn.addEventListener("click", analyze);
+      if (openBtn) openBtn.addEventListener("click", openFileFromDialog);
+      if (saveAsBtn) saveAsBtn.addEventListener("click", saveFileAsDialog);
       if (beginInscriptionBtn) beginInscriptionBtn.addEventListener("click", revealWorkspace);
       for (const btn of tabButtons) {
         btn.addEventListener("keydown", (event) => {
@@ -2560,6 +2645,7 @@ raven gold!
         syncOverlay();
         syncScroll();
         setTab("lexical");
+        updateFileStatus("", "");
 
         displayAST("");
         initForgeBackground();

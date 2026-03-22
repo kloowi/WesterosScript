@@ -4,6 +4,7 @@ import json
 import re
 import textwrap
 from dataclasses import asdict, dataclass, fields, is_dataclass
+from pathlib import Path
 
 from westerosscript import ast
 from westerosscript.explain import NarrationLevel
@@ -26,6 +27,17 @@ class AnalyzeUiResult:
 
 
 class WesterosApi:
+    def __init__(self) -> None:
+        self._window: object | None = None
+        self._open_dialog_kind: object | None = None
+        self._save_dialog_kind: object | None = None
+        self._repo_root = Path(__file__).resolve().parents[2]
+
+    def attach_window(self, window: object, open_dialog_kind: object, save_dialog_kind: object) -> None:
+        self._window = window
+        self._open_dialog_kind = open_dialog_kind
+        self._save_dialog_kind = save_dialog_kind
+
     def analyze(self, source: str, narration: str = "full") -> dict:
         res = analyze_source(
             source,
@@ -55,6 +67,112 @@ class WesterosApi:
                 ast=_ast_to_json(res.program),
             )
         )
+
+    def open_file(self, selected_path: str | None = None) -> dict:
+        path_text = selected_path.strip() if selected_path else ""
+        if path_text:
+            target = Path(path_text).expanduser()
+        else:
+            dialog_path = self._choose_open_path()
+            if dialog_path is None:
+                return {"ok": False, "canceled": True, "message": "Open canceled."}
+            target = dialog_path
+
+        if target.suffix.lower() != ".wss":
+            return {"ok": False, "canceled": False, "message": "Only .wss files can be opened."}
+
+        try:
+            source = target.read_text(encoding="utf-8")
+        except UnicodeDecodeError:
+            return {
+                "ok": False,
+                "canceled": False,
+                "message": "Unable to read file as UTF-8. Please save it as UTF-8 and try again.",
+            }
+        except OSError as exc:
+            return {"ok": False, "canceled": False, "message": f"Unable to open file: {exc}"}
+
+        return {
+            "ok": True,
+            "canceled": False,
+            "path": str(target.resolve()),
+            "name": target.name,
+            "source": source,
+        }
+
+    def save_file_as(self, source: str, suggested_name: str = "script.wss") -> dict:
+        target = self._choose_save_path(suggested_name)
+        if target is None:
+            return {"ok": False, "canceled": True, "message": "Save canceled."}
+
+        try:
+            target.write_text(source, encoding="utf-8")
+        except OSError as exc:
+            return {"ok": False, "canceled": False, "message": f"Unable to save file: {exc}"}
+
+        return {
+            "ok": True,
+            "canceled": False,
+            "path": str(target.resolve()),
+            "name": target.name,
+            "message": f"Saved {target.name}.",
+        }
+
+    def _choose_open_path(self) -> Path | None:
+        if self._window is None or self._open_dialog_kind is None:
+            return None
+
+        picked = None
+        try:
+            picked = self._window.create_file_dialog(
+                self._open_dialog_kind,
+                allow_multiple=False,
+                directory=str(self._repo_root),
+                file_types=("WesterosScript (*.wss)", "*.wss"),
+            )
+        except TypeError:
+            picked = self._window.create_file_dialog(self._open_dialog_kind)
+
+        path = self._coerce_dialog_path(picked)
+        return path.expanduser() if path is not None else None
+
+    def _choose_save_path(self, suggested_name: str) -> Path | None:
+        if self._window is None or self._save_dialog_kind is None:
+            return None
+
+        safe_name = suggested_name.strip() or "script.wss"
+        if safe_name.lower().endswith(".ws"):
+            safe_name = f"{safe_name[:-3]}.wss"
+        if not safe_name.lower().endswith(".wss"):
+            safe_name = f"{safe_name}.wss"
+
+        picked = None
+        try:
+            picked = self._window.create_file_dialog(
+                self._save_dialog_kind,
+                save_filename=safe_name,
+                directory=str(self._repo_root),
+                file_types=("WesterosScript (*.wss)", "*.wss"),
+            )
+        except TypeError:
+            picked = self._window.create_file_dialog(self._save_dialog_kind, save_filename=safe_name)
+
+        path = self._coerce_dialog_path(picked)
+        if path is None:
+            return None
+        out = path.expanduser()
+        if out.suffix.lower() != ".wss":
+            out = out.with_suffix(".wss")
+        return out
+
+    @staticmethod
+    def _coerce_dialog_path(picked: object) -> Path | None:
+        if not picked:
+            return None
+        if isinstance(picked, (list, tuple)):
+            first = picked[0] if picked else None
+            return Path(str(first)) if first else None
+        return Path(str(picked))
 
 
 def _ast_to_json(program: object | None) -> str:
